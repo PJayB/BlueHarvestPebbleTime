@@ -1,6 +1,6 @@
 #pragma once
 
-#include "libfixmath\fix16.h"
+#include "libfixmath/fix16.h"
 
 #ifdef __cplusplus
 extern "C" {

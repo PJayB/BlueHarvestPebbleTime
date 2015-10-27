@@ -27,8 +27,8 @@ void matrix_create_rotation_z(matrix m, fix16_t angle) {
 }
 
 void matrix_multiply(matrix out, const matrix a, const matrix b) {
-    ASSERT(out != a);
-    ASSERT(out != b);
+    ASSERT((size_t)out != (size_t)a);
+    ASSERT((size_t)out != (size_t)b);
     fix16_t x = a[0][0];
     fix16_t y = a[0][1];
     fix16_t z = a[0][2];
