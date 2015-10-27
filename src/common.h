@@ -18,6 +18,7 @@ extern "C" {
 
 typedef fix16_t matrix[4][4];
 typedef fix16_t vec3[3];
+typedef fix16_t vec2[2];
 
 typedef struct _holomesh holomesh;
 
