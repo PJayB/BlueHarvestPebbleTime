@@ -1,3 +1,4 @@
+#include "common.h"
 #include "holomesh.h"
 
 #if defined(WIN32)

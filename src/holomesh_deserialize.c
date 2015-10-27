@@ -1,6 +1,7 @@
+#include "common.h"
 #include "holomesh.h"
 
-#define HOLOMESH_OFFSET_ARRAY(dst, offset) ((uint32_t)(dst).offset) += offset;
+#define HOLOMESH_OFFSET_ARRAY(dst, offset) (dst).offset += offset;
 
 holomesh_result holomesh_deserialize(holomesh* mesh, uint32_t dataSize) {
     if (mesh == NULL) return hmresult_bad_parameter;
