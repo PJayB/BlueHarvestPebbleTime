@@ -6,6 +6,7 @@
 #   define FIXMATH_NO_OVERFLOW
 #endif
 
+#define FIXMATH_SIN_LUT
 #define FIXMATH_NO_ROUNDING
 
 #ifdef __cplusplus
