@@ -1,6 +1,13 @@
 #ifndef __libfixmath_fix16_h__
 #define __libfixmath_fix16_h__
 
+#ifndef WIN32
+#   define FIXMATH_NO_FLOAT
+#   define FIXMATH_NO_OVERFLOW
+#endif
+
+#define FIXMATH_NO_ROUNDING
+
 #ifdef __cplusplus
 extern "C"
 {
