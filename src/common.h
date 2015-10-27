@@ -16,9 +16,27 @@
 extern "C" {
 #endif
 
-typedef fix16_t matrix[4][4];
-typedef fix16_t vec3[3];
-typedef fix16_t vec2[2];
+typedef struct _matrix {
+    fix16_t m[4][4];
+} matrix;
+
+typedef struct _vec3 {
+    union {
+        fix16_t v[3];
+        struct {
+            fix16_t x, y, z;
+        };
+    };
+} vec3;
+
+typedef struct _vec2 {
+    union {
+        fix16_t v[2];
+        struct {
+            fix16_t x, y;
+        };
+    };
+} vec2;
 
 typedef struct _holomesh holomesh;
 

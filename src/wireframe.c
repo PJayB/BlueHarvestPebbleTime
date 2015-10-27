@@ -12,13 +12,13 @@ void wireframe_draw(wireframe_context* ctx) {
     const uint8_t* edge = ctx->edge_indices;
     for (size_t i = 0; i < ctx->num_edges; ++i, edge += 2)
     {
-        const vec3* a = &ctx->points[edge[0]];
-        const vec3* b = &ctx->points[edge[1]];
+        vec3 a = ctx->points[edge[0]];
+        vec3 b = ctx->points[edge[1]];
         wireframe_draw_line(
             ctx->user_ptr, 
-            fix16_to_int_floor((*a)[0]), 
-            fix16_to_int_floor((*a)[1]), 
-            fix16_to_int_floor((*b)[0]), 
-            fix16_to_int_floor((*b)[1]));
+            fix16_to_int_floor(a.v[0]), 
+            fix16_to_int_floor(a.v[1]), 
+            fix16_to_int_floor(b.v[0]), 
+            fix16_to_int_floor(b.v[1]));
     }
 }
