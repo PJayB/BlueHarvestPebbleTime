@@ -162,6 +162,9 @@ extern fix16_t fix16_mul(fix16_t inArg0, fix16_t inArg1) FIXMATH_FUNC_ATTRS;
 */
 extern fix16_t fix16_div(fix16_t inArg0, fix16_t inArg1) FIXMATH_FUNC_ATTRS;
 
+// @PJayB: reciprocal
+extern fix16_t fix16_rcp(fix16_t inArg0) FIXMATH_FUNC_ATTRS;
+
 #ifndef FIXMATH_NO_OVERFLOW
 /*! Performs a saturated multiplication (overflow-protected) of the two given fix16_t's and returns the result.
 */

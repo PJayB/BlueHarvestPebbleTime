@@ -366,6 +366,79 @@ fix16_t fix16_div(fix16_t a, fix16_t b)
 	
 	return result;
 }
+
+// @PJayB: TODO: optimize
+fix16_t fix16_rcp(fix16_t v)
+{
+    // This uses a hardware 32/32 bit division multiple times, until we have
+    // computed all the bits in (a<<17)/b. Usually this takes 1-3 iterations.
+
+    if (v == 0)
+        return fix16_minimum;
+
+    uint32_t remainder = fix16_one;
+    uint32_t divider = (v >= 0) ? v : (-v);
+    uint32_t quotient = 0;
+    int bit_pos = 17;
+
+    // Kick-start the division a bit.
+    // This improves speed in the worst-case scenarios where N and D are large
+    // It gets a lower estimate for the result by N/(D >> 17 + 1).
+    if (divider & 0xFFF00000)
+    {
+        uint32_t shifted_div = ((divider >> 17) + 1);
+        quotient = remainder / shifted_div;
+        remainder -= ((uint64_t) quotient * divider) >> 17;
+    }
+
+    // If the divider is divisible by 2^n, take advantage of it.
+    while (!(divider & 0xF) && bit_pos >= 4)
+    {
+        divider >>= 4;
+        bit_pos -= 4;
+    }
+
+    while (remainder && bit_pos >= 0)
+    {
+        // Shift remainder as much as we can without overflowing
+        int shift = clz(remainder);
+        if (shift > bit_pos) shift = bit_pos;
+        remainder <<= shift;
+        bit_pos -= shift;
+
+        uint32_t div = remainder / divider;
+        remainder = remainder % divider;
+        quotient += div << bit_pos;
+
+#ifndef FIXMATH_NO_OVERFLOW
+        if (div & ~(0xFFFFFFFF >> bit_pos))
+            return fix16_overflow;
+#endif
+
+        remainder <<= 1;
+        bit_pos--;
+    }
+
+#ifndef FIXMATH_NO_ROUNDING
+    // Quotient is always positive so rounding is easy
+    quotient++;
+#endif
+
+    fix16_t result = quotient >> 1;
+
+    // Figure out the sign of the result
+    if (v & 0x80000000)
+    {
+#ifndef FIXMATH_NO_OVERFLOW
+        if (result == fix16_minimum)
+            return fix16_overflow;
+#endif
+
+        result = -result;
+    }
+
+    return result;
+}
 #endif
 
 /* Alternative 32-bit implementation of fix16_div. Fastest on e.g. Atmel AVR.
