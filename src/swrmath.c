@@ -2,9 +2,65 @@
 #include "swrmath.h"
 
 void matrix_create_rotation_z(matrix m, fix16_t angle) {
+    fix16_t sa = fix16_sin(angle);
+    fix16_t ca = fix16_cos(angle);
+
+    m[0][0] = ca;
+    m[0][1] = sa;
+    m[0][2] = 0;
+    m[0][3] = 0;
+
+    m[1][0] = -sa;
+    m[1][1] = ca;
+    m[1][2] = 0;
+    m[1][3] = 0;
+
+    m[2][0] = 0;
+    m[2][1] = 0;
+    m[2][2] = fix16_one;
+    m[2][3] = 0;
+
+    m[3][0] = 0;
+    m[3][1] = 0;
+    m[3][2] = 0;
+    m[3][3] = fix16_one;
 }
 
 void matrix_multiply(matrix out, const matrix a, const matrix b) {
+    ASSERT(out != a);
+    ASSERT(out != b);
+    fix16_t x = a[0][0];
+    fix16_t y = a[0][1];
+    fix16_t z = a[0][2];
+    fix16_t w = a[0][3];
+    out[0][0] = fix16_add(fix16_add(fix16_mul(b[0][0], x), fix16_mul(b[1][0], y)), fix16_add(fix16_mul(b[2][0], z), fix16_mul(b[3][0], w)));
+    out[0][1] = fix16_add(fix16_add(fix16_mul(b[0][1], x), fix16_mul(b[1][1], y)), fix16_add(fix16_mul(b[2][1], z), fix16_mul(b[3][1], w)));
+    out[0][2] = fix16_add(fix16_add(fix16_mul(b[0][2], x), fix16_mul(b[1][2], y)), fix16_add(fix16_mul(b[2][2], z), fix16_mul(b[3][2], w)));
+    out[0][3] = fix16_add(fix16_add(fix16_mul(b[0][3], x), fix16_mul(b[1][3], y)), fix16_add(fix16_mul(b[2][3], z), fix16_mul(b[3][3], w)));
+    x = a[1][0];
+    y = a[1][1];
+    z = a[1][2];
+    w = a[1][3];
+    out[1][0] = fix16_add(fix16_add(fix16_mul(b[0][0], x), fix16_mul(b[1][0], y)), fix16_add(fix16_mul(b[2][0], z), fix16_mul(b[3][0], w)));
+    out[1][1] = fix16_add(fix16_add(fix16_mul(b[0][1], x), fix16_mul(b[1][1], y)), fix16_add(fix16_mul(b[2][1], z), fix16_mul(b[3][1], w)));
+    out[1][2] = fix16_add(fix16_add(fix16_mul(b[0][2], x), fix16_mul(b[1][2], y)), fix16_add(fix16_mul(b[2][2], z), fix16_mul(b[3][2], w)));
+    out[1][3] = fix16_add(fix16_add(fix16_mul(b[0][3], x), fix16_mul(b[1][3], y)), fix16_add(fix16_mul(b[2][3], z), fix16_mul(b[3][3], w)));
+    x = a[2][0];
+    y = a[2][1];
+    z = a[2][2];
+    w = a[2][3];
+    out[2][0] = fix16_add(fix16_add(fix16_mul(b[0][0], x), fix16_mul(b[1][0], y)), fix16_add(fix16_mul(b[2][0], z), fix16_mul(b[3][0], w)));
+    out[2][1] = fix16_add(fix16_add(fix16_mul(b[0][1], x), fix16_mul(b[1][1], y)), fix16_add(fix16_mul(b[2][1], z), fix16_mul(b[3][1], w)));
+    out[2][2] = fix16_add(fix16_add(fix16_mul(b[0][2], x), fix16_mul(b[1][2], y)), fix16_add(fix16_mul(b[2][2], z), fix16_mul(b[3][2], w)));
+    out[2][3] = fix16_add(fix16_add(fix16_mul(b[0][3], x), fix16_mul(b[1][3], y)), fix16_add(fix16_mul(b[2][3], z), fix16_mul(b[3][3], w)));
+    x = a[3][0];
+    y = a[3][1];
+    z = a[3][2];
+    w = a[3][3];
+    out[3][0] = fix16_add(fix16_add(fix16_mul(b[0][0], x), fix16_mul(b[1][0], y)), fix16_add(fix16_mul(b[2][0], z), fix16_mul(b[3][0], w)));
+    out[3][1] = fix16_add(fix16_add(fix16_mul(b[0][1], x), fix16_mul(b[1][1], y)), fix16_add(fix16_mul(b[2][1], z), fix16_mul(b[3][1], w)));
+    out[3][2] = fix16_add(fix16_add(fix16_mul(b[0][2], x), fix16_mul(b[1][2], y)), fix16_add(fix16_mul(b[2][2], z), fix16_mul(b[3][2], w)));
+    out[3][3] = fix16_add(fix16_add(fix16_mul(b[0][3], x), fix16_mul(b[1][3], y)), fix16_add(fix16_mul(b[2][3], z), fix16_mul(b[3][3], w)));
 }
 
 void matrix_vector_transform(vec3 v, const matrix m) {
