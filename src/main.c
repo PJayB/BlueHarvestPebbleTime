@@ -1,28 +1,6 @@
-#include <pebble.h>
-
-Window *my_window;
-BitmapLayer *frameBufferLayer;
-Layer* uiElementsLayer;
-TextLayer* textLayer;
-TextLayer* textLayerSym;
-TextLayer* infoTextLayer;
-BitmapLayer* rebelLogoLayer;
-BitmapLayer* impLogoLayer;
-BitmapLayer* bobaLogoLayer;
-TextLayer* timeLayer;
-
-GBitmap* frameBufferBitmap;
-GBitmap* rebelLogoBitmap;
-GBitmap* impLogoBitmap;
-GBitmap* bobaLogoBitmap;
-void* assert_reserve_pool;
-
-GFont g_font_sw;
-GFont g_font_sw_symbol;
-GFont g_font_time;
-GFont g_font_info;
-
-AppTimer* g_timer;
+#include "common.h"
+#include "holomesh.h"
+#include "swrmath.h"
 
 char g_sample_craft_name_lower[256] = {0};
 
@@ -57,6 +35,54 @@ static GColor c_palette[] = {
 
 static const int c_refreshTimer = 100;
 static const uint8_t c_logoSize = 36;
+
+// UI elements
+Window *my_window;
+BitmapLayer *frameBufferLayer;
+Layer* uiElementsLayer;
+TextLayer* textLayer;
+TextLayer* textLayerSym;
+TextLayer* infoTextLayer;
+BitmapLayer* rebelLogoLayer;
+BitmapLayer* impLogoLayer;
+BitmapLayer* bobaLogoLayer;
+TextLayer* timeLayer;
+
+// Global resources
+GBitmap* frameBufferBitmap;
+GBitmap* rebelLogoBitmap;
+GBitmap* impLogoBitmap;
+GBitmap* bobaLogoBitmap;
+
+GFont g_font_sw;
+GFont g_font_sw_symbol;
+GFont g_font_time;
+GFont g_font_info;
+
+AppTimer* g_timer;
+
+// Rendering stuff
+holomesh* g_holomesh;
+vec3* g_transformed_points;
+
+void load_holomesh(void) {
+    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_AWING);
+    
+    // Allocate space for the resource
+    size_t size = resource_size(handle);
+    g_holomesh = (holomesh*) malloc(size);
+    
+    // Load it
+    size_t copied = resource_load(handle, (uint8_t*) g_holomesh, size);
+    ASSERT(copied == size);
+    
+    // Deserialize it
+    holomesh_result hr = holomesh_deserialize(g_holomesh, size);
+    ASSERT(hr == hmresult_ok);
+    
+    // TODO: get the total number of points over all the hulls
+    g_transformed_points = (vec3*) malloc(sizeof(vec3) * g_holomesh->hulls.ptr[0].vertices.size);
+}
 
 void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, int color) {
     // TODO: this check is done outside this function so we could remove this too
@@ -108,12 +134,29 @@ void update_display(Layer* layer, GContext* ctx) {
     graphics_context_set_antialiased(ctx, true);
     graphics_context_set_stroke_color(ctx, GColorRed);
     graphics_context_set_stroke_width(ctx, 2);
-    graphics_draw_line(ctx, GPoint(0, 0), GPoint(144, 144));
-    graphics_draw_line(ctx, GPoint(0, 144), GPoint(144, 0));
+    //graphics_draw_line(ctx, GPoint(0, 0), GPoint(144, 144));
+    //graphics_draw_line(ctx, GPoint(0, 144), GPoint(144, 0));
     
     //GRect logoRect = GRect(144 - c_logoSize, 144 - c_logoSize, c_logoSize, c_logoSize);
     //graphics_context_set_compositing_mode(ctx, GCompOpSet);
     //graphics_draw_bitmap_in_rect(ctx, logoBitmap, logoRect);
+    
+    const holomesh_hull* hull = &g_holomesh->hulls.ptr[0];
+    
+    // Get the projection matrix
+    matrix proj;
+    memcpy(proj, g_holomesh->transforms[holomesh_transform_top].m, sizeof(fix16_t) * 16);
+    
+    // Transform all the points
+    for (size_t i = 0; i < hull->vertices.size; ++i) {
+        vec3 v = { 
+            hull->vertices.ptr[i].x,
+            hull->vertices.ptr[i].y,
+            hull->vertices.ptr[i].z 
+        };
+        matrix_vector_transform(v, (const matrix) proj);
+        vec3_copy(g_transformed_points[i], v);
+    }
 }
 
 bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {
@@ -174,6 +217,10 @@ static int g_title_fade_timer = 0;
 
 void animation_timer_trigger(void* data) {
     paint();
+    
+    // TODO: remove me
+    layer_mark_dirty(uiElementsLayer);
+    
     if (g_do_title_fade_timer) {
         g_do_title_fade_timer = fade_between_text(textLayer, textLayerSym, g_title_fade_timer++);
     }
@@ -183,7 +230,7 @@ void animation_timer_trigger(void* data) {
 size_t g_current_stat = 0;
 void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     if (units_changed == SECOND_UNIT) {
-        layer_mark_dirty(uiElementsLayer);
+        // TODO: restore me: layer_mark_dirty(uiElementsLayer);
         text_layer_set_text(infoTextLayer, c_sample_craft_stats[
             (g_current_stat++) % c_sample_craft_stat_count
         ]);
@@ -210,6 +257,10 @@ void create_symbol_text(char* out, size_t out_size, const char* in) {
 
 void handle_init(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "INIT MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
+    
+    load_holomesh();
+    
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "UI MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
 
     my_window = window_create();
     window_set_background_color(my_window, GColorBlack);
