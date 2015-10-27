@@ -9,6 +9,11 @@
     "resources": {
         "media": [
             {
+                "file": "data/awing.holo",
+                "name": "HOLO_AWING",
+                "type": "raw"
+            },
+            {
                 "file": "images/bounty_hunter_logo.png",
                 "name": "BOUNTY_HUNGER_LOGO",
                 "targetPlatforms": [
