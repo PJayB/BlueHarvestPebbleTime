@@ -11,7 +11,7 @@ extern "C" {
     MODEL LOADING
 
     ---------------------------------*/
-#define HOLOMESH_MAGIC 'HOLO'
+#define HOLOMESH_MAGIC 0x484f4c4fu // 'HOLO'
 #define HOLOMESH_VERSION 3
 
 #define HOLOMESH_ARRAY_PTR(type) union { type* ptr; int32_t offset; }
