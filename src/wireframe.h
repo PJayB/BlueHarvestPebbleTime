@@ -5,9 +5,10 @@ extern "C" {
 #endif
 
 typedef struct _wireframe_context {
-    viewport viewport;
-    const holomesh* mesh;
-    const vec3* transformed_points;
+    const vec3* points;
+    const uint8_t* edge_indices;
+    size_t num_edges;
+    void* user_ptr;
 } wireframe_context;
 
 void wireframe_draw(wireframe_context* context);

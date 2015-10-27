@@ -18,7 +18,7 @@
     dest.offset = (uint32_t) ptr; \
     HOLOMESH_COPY_ARRAY(dest, src); \
     ptr += HOLOMESH_ARRAY_SIZE(src); } }
-#define HOLOMESH_OFFSET_ARRAY(dst, offset) ((int32_t)(dst).offset) -= offset;
+#define HOLOMESH_OFFSET_ARRAY(dst, offset) (dst).offset -= offset;
 
 void holomesh_offset_pointers(holomesh* mesh, int32_t offset);
 
