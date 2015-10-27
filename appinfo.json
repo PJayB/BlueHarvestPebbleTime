@@ -1,0 +1,70 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "pebble@pjblewis.com",
+    "longName": "STAR WARS",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/bounty_hunter_logo.png",
+                "name": "BOUNTY_HUNGER_LOGO",
+                "targetPlatforms": [
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "png"
+            },
+            {
+                "characterRegex": "[a-z]",
+                "file": "fonts/SFDistantGalaxySymbols.ttf",
+                "name": "FONT_SYMBOL_12",
+                "targetPlatforms": [
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "font"
+            },
+            {
+                "characterRegex": "[a-zA-Z0-9\\-\\\\/,:\\.]",
+                "file": "fonts/SFDistantGalaxy.ttf",
+                "name": "FONT_12",
+                "targetPlatforms": [
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "font"
+            },
+            {
+                "file": "images/imp_logo.png",
+                "name": "IMPERIAL_LOGO",
+                "targetPlatforms": [
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "png"
+            },
+            {
+                "file": "images/rebel_logo.png",
+                "name": "REBEL_LOGO",
+                "targetPlatforms": [
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "png"
+            }
+        ]
+    },
+    "sdkVersion": "3",
+    "shortName": "STARWARS",
+    "targetPlatforms": [
+        "basalt"
+    ],
+    "uuid": "1b5a56a0-9cc1-4f93-83f3-5116ffb3ba22",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
