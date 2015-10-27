@@ -95,7 +95,7 @@ fix16_t fix16_mul(fix16_t inArg0, fix16_t inArg1)
 	}
 	
 	#ifdef FIXMATH_NO_ROUNDING
-	return product >> 16;
+	return (fix16_t)(product >> 16);
 	#else
 	fix16_t result = (fix16_t)(product >> 16);
 	result += (product & 0x8000) >> 15;
@@ -282,7 +282,7 @@ uint8_t clz(uint32_t x)
     unsigned index;
     if (!_BitScanReverse(&index, x))
         return 32;
-    return (uint8_t) 31 - index;
+    return (uint8_t)(31 - index);
 }
 #else
 static uint8_t clz(uint32_t x)
