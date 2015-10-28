@@ -6,7 +6,7 @@
 holomesh_result holomesh_deserialize(holomesh* mesh, uint32_t dataSize) {
     if (mesh == NULL) return hmresult_bad_parameter;
     if (mesh->magic != HOLOMESH_MAGIC) return hmresult_bad_magic;
-    if (mesh->full_data_size > dataSize) return hmresult_buffer_too_small;
+    if (mesh->file_size > dataSize) return hmresult_buffer_too_small;
 
     uint32_t offset = (uint32_t) mesh;
 

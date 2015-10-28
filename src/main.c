@@ -64,22 +64,32 @@ AppTimer* g_timer;
 
 // Rendering stuff
 holomesh* g_holomesh;
+vec3* g_scratch;
 
 void load_holomesh(void) {
     ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_AWING);
     
     // Allocate space for the resource
     // TODO: estimate this better
-    size_t size = 35 * 1024; //resource_size(handle);
+    size_t size = resource_size(handle);
     g_holomesh = (holomesh*) malloc(size);
     
     // Load it
     size_t copied = resource_load(handle, (uint8_t*) g_holomesh, size);
     ASSERT(copied == g_holomesh->file_size);
+    ASSERT(size >= g_holomesh->file_size);
     
     // Deserialize it
     holomesh_result hr = holomesh_deserialize(g_holomesh, size);
     ASSERT(hr == hmresult_ok);
+    
+    // Allocate scratch
+    size_t scratch_size = g_holomesh->full_data_size - g_holomesh->file_size;
+    g_scratch = (vec3*) malloc(scratch_size);
+    
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "HOLOMESH: %u bytes, %u scratch size", 
+            (unsigned) size,
+            (unsigned) scratch_size);
 }
 
 void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, int color) {
@@ -137,7 +147,7 @@ void update_display(Layer* layer, GContext* ctx) {
     graphics_context_set_antialiased(ctx, true);
     graphics_context_set_stroke_color(ctx, GColorElectricBlue);
     graphics_context_set_stroke_width(ctx, 1);
-    
+        
     fix16_t halfViewportSize = fix16_from_int(144 / 2);
     
     // Get the projection matrix
@@ -152,12 +162,14 @@ void update_display(Layer* layer, GContext* ctx) {
     // Create the final transform
     matrix transform;
     matrix_multiply(&transform, &rotation, proj);
-
+    
+    vec3* scratch_vertices = g_scratch; 
+    
     for (size_t hull_index = 0; hull_index < g_holomesh->hulls.size; ++hull_index) {
         holomesh_hull* hull = &g_holomesh->hulls.ptr[hull_index];
         
         // Transform all the points
-        vec3* out_v = (vec3*) hull->scratch_vertices.ptr;
+        vec3* out_v = (vec3*) scratch_vertices;
         for (size_t i = 0; i < hull->vertices.size; ++i, ++out_v) {
             vec3 v;
             v.x = hull->vertices.ptr[i].x;
@@ -176,9 +188,12 @@ void update_display(Layer* layer, GContext* ctx) {
         wireframe_context wfctx;
         wfctx.edge_indices = (const uint8_t*) hull->edges.ptr;
         wfctx.num_edges = hull->edges.size;
-        wfctx.points = (vec3*) hull->scratch_vertices.ptr;
+        wfctx.points = (vec3*) scratch_vertices;
         wfctx.user_ptr = ctx;
         wireframe_draw(&wfctx);
+        
+        // Move on from scratch
+        scratch_vertices += hull->vertices.size;
     }
 }
 
@@ -247,7 +262,7 @@ void animation_timer_trigger(void* data) {
     if (g_do_title_fade_timer) {
         g_do_title_fade_timer = fade_between_text(textLayer, textLayerSym, g_title_fade_timer++);
     }
-    g_timer = app_timer_register(c_refreshTimer, animation_timer_trigger, NULL);
+    g_timer = app_timer_register(c_refreshTimer, animation_timer_trigger, NULL);    
 }
 
 size_t g_current_stat = 0;
