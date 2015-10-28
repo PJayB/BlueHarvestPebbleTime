@@ -173,8 +173,8 @@ void transform_mesh(void) {
             
             matrix_vector_transform(&v, &transform);
             
-            v.x = fix16_add(fix16_mul(v.x, halfViewportSize), halfViewportSize);
-            v.y = fix16_add(fix16_mul(v.y, halfViewportSize), halfViewportSize);
+            v.x = fix16_floor(fix16_add(fix16_mul(v.x, halfViewportSize), halfViewportSize));
+            v.y = fix16_floor(fix16_add(fix16_mul(v.y, halfViewportSize), halfViewportSize));
         
             *out_v = v;
         }
