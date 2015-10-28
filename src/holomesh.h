@@ -64,6 +64,7 @@ extern "C" {
 
     typedef struct _holomesh_hull {
         HOLOMESH_ARRAY(holomesh_vec3) vertices;
+        HOLOMESH_ARRAY(holomesh_vec3) scratch_vertices;
         HOLOMESH_ARRAY(holomesh_vec2) uvs;
         HOLOMESH_ARRAY(holomesh_edge) edges;
         HOLOMESH_ARRAY(holomesh_face) faces;
@@ -93,6 +94,7 @@ extern "C" {
         uint32_t magic;
         uint32_t version;
         uint32_t file_size;
+        uint32_t full_data_size;
         holomesh_craft_info info;
         holomesh_transform transforms[holomesh_transform_count];
         HOLOMESH_ARRAY(holomesh_hull) hulls;
@@ -113,7 +115,7 @@ extern "C" {
     } holomesh_result;
 
     // Serialize utilities
-    uint32_t holomesh_get_size(const holomesh* mesh);
+    uint32_t holomesh_get_size(const holomesh* mesh, int include_scratch);
     uint32_t holomesh_texture_data_stride(uint16_t pixelsPerRow);
     uint32_t holomesh_texture_data_size(uint16_t w, uint16_t h);
     holomesh_result holomesh_pack_texture(uint8_t* dst, uint32_t dstSize, const uint8_t* texture, uint16_t width, uint16_t height);

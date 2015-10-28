@@ -6,7 +6,7 @@
 holomesh_result holomesh_deserialize(holomesh* mesh, uint32_t dataSize) {
     if (mesh == NULL) return hmresult_bad_parameter;
     if (mesh->magic != HOLOMESH_MAGIC) return hmresult_bad_magic;
-    if (mesh->file_size > dataSize) return hmresult_buffer_too_small;
+    if (mesh->full_data_size > dataSize) return hmresult_buffer_too_small;
 
     uint32_t offset = (uint32_t) mesh;
 
@@ -18,6 +18,7 @@ holomesh_result holomesh_deserialize(holomesh* mesh, uint32_t dataSize) {
 
     for (uint32_t i = 0; i < mesh->hulls.size; ++i) {
         HOLOMESH_OFFSET_ARRAY(mesh->hulls.ptr[i].vertices, offset);
+        HOLOMESH_OFFSET_ARRAY(mesh->hulls.ptr[i].scratch_vertices, offset);
         HOLOMESH_OFFSET_ARRAY(mesh->hulls.ptr[i].uvs, offset);
         HOLOMESH_OFFSET_ARRAY(mesh->hulls.ptr[i].edges, offset);
         HOLOMESH_OFFSET_ARRAY(mesh->hulls.ptr[i].faces, offset);
