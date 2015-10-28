@@ -14,6 +14,7 @@ void wireframe_draw(wireframe_context* ctx) {
     {
         vec3 a = ctx->points[edge[0]];
         vec3 b = ctx->points[edge[1]];
+        
         wireframe_draw_line(
             ctx->user_ptr, 
             fix16_to_int_floor(a.v[0]), 

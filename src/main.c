@@ -1,6 +1,7 @@
 #include "common.h"
 #include "holomesh.h"
 #include "swrmath.h"
+#include "wireframe.h"
 
 char g_sample_craft_name_lower[256] = {0};
 
@@ -33,7 +34,7 @@ static GColor c_palette[] = {
     {0b11001111}
 };
 
-static const int c_refreshTimer = 100;
+static const int c_refreshTimer = 30;
 static const uint8_t c_logoSize = 36;
 
 // UI elements
@@ -63,25 +64,22 @@ AppTimer* g_timer;
 
 // Rendering stuff
 holomesh* g_holomesh;
-vec3* g_transformed_points;
 
 void load_holomesh(void) {
     ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_AWING);
     
     // Allocate space for the resource
-    size_t size = resource_size(handle);
+    // TODO: estimate this better
+    size_t size = 35 * 1024; //resource_size(handle);
     g_holomesh = (holomesh*) malloc(size);
     
     // Load it
     size_t copied = resource_load(handle, (uint8_t*) g_holomesh, size);
-    ASSERT(copied == size);
+    ASSERT(copied == g_holomesh->file_size);
     
     // Deserialize it
     holomesh_result hr = holomesh_deserialize(g_holomesh, size);
     ASSERT(hr == hmresult_ok);
-    
-    // TODO: get the total number of points over all the hulls
-    g_transformed_points = (vec3*) malloc(sizeof(vec3) * g_holomesh->hulls.ptr[0].vertices.size);
 }
 
 void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, int color) {
@@ -130,32 +128,57 @@ void paint(void) {
     layer_mark_dirty(bitmap_layer_get_layer(frameBufferLayer));
 }
 
+void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
+    GContext* ctx = (GContext*) user_ptr;
+    graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
+}
+
 void update_display(Layer* layer, GContext* ctx) {
     graphics_context_set_antialiased(ctx, true);
-    graphics_context_set_stroke_color(ctx, GColorRed);
-    graphics_context_set_stroke_width(ctx, 2);
-    //graphics_draw_line(ctx, GPoint(0, 0), GPoint(144, 144));
-    //graphics_draw_line(ctx, GPoint(0, 144), GPoint(144, 0));
+    graphics_context_set_stroke_color(ctx, GColorElectricBlue);
+    graphics_context_set_stroke_width(ctx, 1);
     
-    //GRect logoRect = GRect(144 - c_logoSize, 144 - c_logoSize, c_logoSize, c_logoSize);
-    //graphics_context_set_compositing_mode(ctx, GCompOpSet);
-    //graphics_draw_bitmap_in_rect(ctx, logoBitmap, logoRect);
-    
-    const holomesh_hull* hull = &g_holomesh->hulls.ptr[0];
+    fix16_t halfViewportSize = fix16_from_int(144 / 2);
     
     // Get the projection matrix
-    matrix proj;
-    memcpy(proj, g_holomesh->transforms[holomesh_transform_top].m, sizeof(fix16_t) * 16);
+    const matrix* proj = (const matrix*) &g_holomesh->transforms[holomesh_transform_perspective_square_aspect];
     
-    // Transform all the points
-    for (size_t i = 0; i < hull->vertices.size; ++i) {
-        vec3 v = { 
-            hull->vertices.ptr[i].x,
-            hull->vertices.ptr[i].y,
-            hull->vertices.ptr[i].z 
-        };
-        matrix_vector_transform(v, (const matrix) proj);
-        vec3_copy(g_transformed_points[i], v);
+    // Create a rotation matrix
+    static fix16_t angle = 0;
+    matrix rotation;
+    matrix_create_rotation_z(&rotation, angle);
+    angle += (fix16_one >> 4);
+    
+    // Create the final transform
+    matrix transform;
+    matrix_multiply(&transform, &rotation, proj);
+
+    for (size_t hull_index = 0; hull_index < g_holomesh->hulls.size; ++hull_index) {
+        holomesh_hull* hull = &g_holomesh->hulls.ptr[hull_index];
+        
+        // Transform all the points
+        vec3* out_v = (vec3*) hull->scratch_vertices.ptr;
+        for (size_t i = 0; i < hull->vertices.size; ++i, ++out_v) {
+            vec3 v;
+            v.x = hull->vertices.ptr[i].x;
+            v.y = hull->vertices.ptr[i].y;
+            v.z = hull->vertices.ptr[i].z;
+            
+            matrix_vector_transform(&v, &transform);
+            
+            v.x = fix16_add(fix16_mul(v.x, halfViewportSize), halfViewportSize);
+            v.y = fix16_add(fix16_mul(v.y, halfViewportSize), halfViewportSize);
+        
+            *out_v = v;
+        }
+    
+        // Render the edges
+        wireframe_context wfctx;
+        wfctx.edge_indices = (const uint8_t*) hull->edges.ptr;
+        wfctx.num_edges = hull->edges.size;
+        wfctx.points = (vec3*) hull->scratch_vertices.ptr;
+        wfctx.user_ptr = ctx;
+        wireframe_draw(&wfctx);
     }
 }
 
@@ -216,7 +239,7 @@ static bool g_do_title_fade_timer = false;
 static int g_title_fade_timer = 0;
 
 void animation_timer_trigger(void* data) {
-    paint();
+    // TODO: restore me: paint();
     
     // TODO: remove me
     layer_mark_dirty(uiElementsLayer);
@@ -280,7 +303,7 @@ void handle_init(void) {
         false);
     bitmap_layer_set_bitmap(frameBufferLayer, frameBufferBitmap);
     
-    paint();    
+    //TODO: restore me: paint();    
     
     uiElementsLayer = layer_create(GRect(0, 0, 144, 144));
     layer_add_child(window_get_root_layer(my_window), uiElementsLayer);
