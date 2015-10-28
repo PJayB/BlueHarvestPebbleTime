@@ -18,10 +18,6 @@
     dest.offset = (uint32_t) ptr; \
     HOLOMESH_COPY_ARRAY(dest, src); \
     ptr += HOLOMESH_ARRAY_SIZE(src); } }
-#define HOLOMESH_SET_SCRATCH_ARRAY(dest, ptr, src) { \
-    if ((src).size == 0) { (dest).offset = 0; (dest).size = 0; } else { \
-    (dest).offset = (uint32_t) ptr; \
-    (ptr) += HOLOMESH_ARRAY_SIZE(src); } }
 #define HOLOMESH_OFFSET_ARRAY(dst, offset) (dst).offset -= offset;
 
 void holomesh_offset_pointers(holomesh* mesh, int32_t offset);
@@ -72,13 +68,12 @@ holomesh_result holomesh_serialize(const holomesh* sourceMesh, holomesh* destMes
     destMesh->magic = HOLOMESH_MAGIC;
     destMesh->version = HOLOMESH_VERSION;
     destMesh->file_size = fileSize;
-    destMesh->full_data_size = totalSizeWithScratch;
+    destMesh->scratch_size = totalSizeWithScratch - fileSize;
 
     // Set up the write pointer
     uint8_t* base = ((uint8_t*) destMesh);
     uint8_t* ptr = base + sizeof(holomesh);
     uint8_t* end = base + fileSize;
-    uint8_t* scratchEnd = base + totalSizeWithScratch;
 
     // Copy the second tier structures into the mesh
     HOLOMESH_SET_AND_COPY_ARRAY(destMesh->hulls, ptr, sourceMesh->hulls);
@@ -109,24 +104,12 @@ holomesh_result holomesh_serialize(const holomesh* sourceMesh, holomesh* destMes
 
     ASSERT(ptr == end);
 
-    // 
-    // Add scratch
-    //
-    for (uint32_t i = 0; i < destMesh->hulls.size; ++i) {
-        holomesh_hull* dst = destMesh->hulls.ptr + i;
-        const holomesh_hull* src = sourceMesh->hulls.ptr + i;
-        HOLOMESH_SET_SCRATCH_ARRAY(dst->scratch_vertices, ptr, src->vertices);
-    }
-
-    ASSERT(ptr == scratchEnd);
-
     //
     // De-offset
     //
     uint32_t offset = (uint32_t) base;
     for (uint32_t i = 0; i < destMesh->hulls.size; ++i) {
         HOLOMESH_OFFSET_ARRAY(destMesh->hulls.ptr[i].vertices, offset);
-        HOLOMESH_OFFSET_ARRAY(destMesh->hulls.ptr[i].scratch_vertices, offset);
         HOLOMESH_OFFSET_ARRAY(destMesh->hulls.ptr[i].uvs, offset);
         HOLOMESH_OFFSET_ARRAY(destMesh->hulls.ptr[i].edges, offset);
         HOLOMESH_OFFSET_ARRAY(destMesh->hulls.ptr[i].faces, offset);

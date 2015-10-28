@@ -64,7 +64,6 @@ extern "C" {
 
     typedef struct _holomesh_hull {
         HOLOMESH_ARRAY(holomesh_vec3) vertices;
-        HOLOMESH_ARRAY(holomesh_vec3) scratch_vertices;
         HOLOMESH_ARRAY(holomesh_vec2) uvs;
         HOLOMESH_ARRAY(holomesh_edge) edges;
         HOLOMESH_ARRAY(holomesh_face) faces;
@@ -94,7 +93,7 @@ extern "C" {
         uint32_t magic;
         uint32_t version;
         uint32_t file_size;
-        uint32_t full_data_size;
+        uint32_t scratch_size;
         holomesh_craft_info info;
         holomesh_transform transforms[holomesh_transform_count];
         HOLOMESH_ARRAY(holomesh_hull) hulls;
