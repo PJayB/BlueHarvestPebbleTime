@@ -14,6 +14,16 @@
                 "type": "raw"
             },
             {
+                "file": "data/cortn.holo",
+                "name": "HOLO_CORELLIAN_TRANSPORT",
+                "type": "raw"
+            },
+            {
+                "file": "data/isd.holo",
+                "name": "HOLO_IMPERIAL_STAR_DESTROYER",
+                "type": "raw"
+            },
+            {
                 "file": "images/bounty_hunter_logo.png",
                 "name": "BOUNTY_HUNGER_LOGO",
                 "targetPlatforms": [

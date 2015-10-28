@@ -67,7 +67,7 @@ holomesh* g_holomesh;
 vec3* g_scratch;
 
 void load_holomesh(void) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_AWING);
+    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_CORELLIAN_TRANSPORT);
     
     // Allocate space for the resource
     // TODO: estimate this better
