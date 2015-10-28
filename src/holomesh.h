@@ -120,14 +120,14 @@ extern "C" {
     uint32_t holomesh_texture_data_size(uint16_t w, uint16_t h);
     holomesh_result holomesh_pack_texture(uint8_t* dst, uint32_t dstSize, const uint8_t* texture, uint16_t width, uint16_t height);
     holomesh_result holomesh_unpack_texture(uint8_t* dst, uint32_t dstSize, const uint8_t* texture, uint16_t width, uint16_t height);
-    void holomesh_set_vec2(holomesh_vec2* vec, uint16_t u, uint16_t v);
-    void holomesh_set_vec3(holomesh_vec3* vec, uint16_t x, uint16_t y, uint16_t z);
+    void holomesh_set_vec2(holomesh_vec2* vec, uint32_t u, uint32_t v);
+    void holomesh_set_vec3(holomesh_vec3* vec, uint32_t x, uint32_t y, uint32_t z);
     void holomesh_set_edge(holomesh_edge* e, uint8_t a, uint8_t b);
     void holomesh_set_face(holomesh_face* f, uint8_t pa, uint8_t pb, uint8_t pc, uint8_t ta, uint8_t tb, uint8_t tc, uint8_t texture);
     void holomesh_set_string(holomesh_string* out, char* str);
     void holomesh_set_texture(holomesh_texture* texture, uint8_t* data, uint32_t dataSize, uint16_t width, uint16_t height);
     void holomesh_set_info_point(holomesh_info_point* info, uint16_t nameIndex, const holomesh_vec3* point);
-    void holomesh_set_transform(holomesh_transform* t, const uint16_t m[16]);
+    void holomesh_set_transform(holomesh_transform* t, const uint32_t m[16]);
 
     // Lifetime of these arrays must persist over lifetime of hull
     void holomesh_set_hull(

@@ -147,12 +147,12 @@ holomesh_result holomesh_serialize(const holomesh* sourceMesh, holomesh* destMes
     return hmresult_ok;
 }
 
-void holomesh_set_vec2(holomesh_vec2* vec, uint16_t u, uint16_t v) {
+void holomesh_set_vec2(holomesh_vec2* vec, uint32_t u, uint32_t v) {
     vec->u = u;
     vec->v = v;
 }
 
-void holomesh_set_vec3(holomesh_vec3* vec, uint16_t x, uint16_t y, uint16_t z) {
+void holomesh_set_vec3(holomesh_vec3* vec, uint32_t x, uint32_t y, uint32_t z) {
     vec->x = x;
     vec->y = y;
     vec->z = z;
@@ -260,8 +260,8 @@ void holomesh_set_info_point(holomesh_info_point* info, uint16_t nameIndex, cons
     info->point = *point;
 }
 
-void holomesh_set_transform(holomesh_transform* t, const uint16_t m[16]) {
-    memcpy(t->m, m, sizeof(uint16_t) * 16);
+void holomesh_set_transform(holomesh_transform* t, const uint32_t m[16]) {
+    memcpy(t->m, m, sizeof(uint32_t) * 16);
 }
 
 void holomesh_set_hull(
