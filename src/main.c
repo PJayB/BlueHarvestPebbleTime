@@ -34,7 +34,7 @@ static GColor c_palette[] = {
     {0b11001111}
 };
 
-static const int c_refreshTimer = 30;
+static const int c_refreshTimer = 100;
 static const uint8_t c_logoSize = 36;
 
 // UI elements
