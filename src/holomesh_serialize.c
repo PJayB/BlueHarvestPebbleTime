@@ -19,9 +19,9 @@
     HOLOMESH_COPY_ARRAY(dest, src); \
     ptr += HOLOMESH_ARRAY_SIZE(src); } }
 #define HOLOMESH_SET_SCRATCH_ARRAY(dest, ptr, src) { \
-    if (src.ptr == NULL) { dest.offset = 0; dest.size = 0; } else { \
-    dest.offset = (uint32_t) ptr; \
-    ptr += HOLOMESH_ARRAY_SIZE(src); } }
+    if ((src).size == 0) { (dest).offset = 0; (dest).size = 0; } else { \
+    (dest).offset = (uint32_t) ptr; \
+    (ptr) += HOLOMESH_ARRAY_SIZE(src); } }
 #define HOLOMESH_OFFSET_ARRAY(dst, offset) (dst).offset -= offset;
 
 void holomesh_offset_pointers(holomesh* mesh, int32_t offset);
@@ -107,7 +107,7 @@ holomesh_result holomesh_serialize(const holomesh* sourceMesh, holomesh* destMes
         HOLOMESH_SET_AND_COPY_ARRAY(dst->str, ptr, src->str);
     }
 
-    ASSERT(ptr <= end);
+    ASSERT(ptr == end);
 
     // 
     // Add scratch
@@ -115,10 +115,10 @@ holomesh_result holomesh_serialize(const holomesh* sourceMesh, holomesh* destMes
     for (uint32_t i = 0; i < destMesh->hulls.size; ++i) {
         holomesh_hull* dst = destMesh->hulls.ptr + i;
         const holomesh_hull* src = sourceMesh->hulls.ptr + i;
-        HOLOMESH_SET_SCRATCH_ARRAY(dst->scratch_vertices, ptr, src->scratch_vertices);
+        HOLOMESH_SET_SCRATCH_ARRAY(dst->scratch_vertices, ptr, src->vertices);
     }
 
-    ASSERT(ptr <= scratchEnd);
+    ASSERT(ptr == scratchEnd);
 
     //
     // De-offset
