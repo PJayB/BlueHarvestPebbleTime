@@ -37,11 +37,11 @@ extern "C" {
 
 #pragma pack(push, 1)
     typedef struct _holomesh_vec3 {
-        uint16_t x, y, z;
+        uint32_t x, y, z;
     } holomesh_vec3;
 
     typedef struct _holomesh_vec2 {
-        uint16_t u, v;
+        uint32_t u, v;
     } holomesh_vec2;
 
     typedef struct _holomesh_edge {
@@ -59,7 +59,7 @@ extern "C" {
     } holomesh_face;
 
     typedef struct _holomesh_transform {
-        uint16_t m[16];
+        uint32_t m[16];
     } holomesh_transform;
 
     typedef struct _holomesh_hull {
