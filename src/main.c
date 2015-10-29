@@ -1,6 +1,6 @@
 #include "common.h"
 #include "holomesh.h"
-#include "swrmath.h"
+#include "matrix.h"
 #include "wireframe.h"
 
 char g_sample_craft_name_lower[256] = {0};

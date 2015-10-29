@@ -1,5 +1,5 @@
 #include "common.h"
-#include "swrmath.h"
+#include "matrix.h"
 
 void matrix_create_rotation_z(matrix* M, fix16_t angle) {
     fix16_t sa = fix16_sin(angle);
