@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-typedef struct _face_sort_key face_sort_key;
+typedef struct _face_kickoff face_kickoff;
 
 typedef struct _stepping_edge {
     fix16_t x, step_x;
@@ -22,7 +22,7 @@ typedef struct _stepping_span {
 
 typedef struct _rasterizer_context {
     const vec3* points;
-    face_sort_key* face_kickoffs;
+    face_kickoff* face_kickoffs;
     stepping_span span_pool;
     size_t span_pool_size;
     size_t face_kickoffs_count;
@@ -32,7 +32,7 @@ typedef struct _rasterizer_context {
 } rasterizer_context;
 
 // Construct face kickoffs and spans from hulls
-// TODO
+void create_face_kickoffs(face_kickoff* kickoffs, size_t kickoff_pool_size);
 
 // Do the rasterization
 void rasterize(rasterizer_context* context);
