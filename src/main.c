@@ -99,7 +99,7 @@ void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, int color) {
         int bit_shift = (~x & 3) << 1;
         // TODO: remove & 3 here -- technically this is out of range and insane data
         row_info->data[byte_offset] |= (color & 3) << bit_shift;
-    }        
+    }
 }
 
 static int paint_tick = 0;
