@@ -12,11 +12,17 @@ typedef struct _rasterizer_stepping_span_freelist_node {
     };
 } rasterizer_stepping_span_freelist_node;
 
-static rasterizer_stepping_span_freelist_node g_span_pool[250];
+#ifdef SANDBOX
+#   define MAX_SPAN_COUNT 100000
+#else
+#   define MAX_SPAN_COUNT 250
+#endif
+
+static rasterizer_stepping_span_freelist_node g_span_pool[MAX_SPAN_COUNT];
 static rasterizer_stepping_span_freelist_node* g_first_free = NULL;
 static size_t g_active_span_count = 0;
 
-static const size_t c_span_pool_size = sizeof(g_span_pool) / sizeof(g_span_pool[0]);
+static const size_t c_span_pool_size = MAX_SPAN_COUNT;
 
 void rasterizer_init_span_pool(void) {
     memset(g_span_pool, 0, sizeof(g_span_pool));
