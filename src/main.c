@@ -90,7 +90,34 @@ void load_holomesh(void) {
             (unsigned) g_holomesh->scratch_size);
 }
 
-void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, int color) {
+void paint(void) {
+    render_prep_frame();
+
+    // Get the projection matrix_t
+    matrix_t transform;
+    static fix16_t angle = 0;
+
+    render_create_3d_transform(
+        &transform, 
+        &g_holomesh->transforms[holomesh_transform_perspective_square_aspect], 
+        angle);
+
+    angle += fix16_one >> 4;
+
+    // Transform the mesh
+    viewport_t viewport;
+    viewport_init(&viewport, 144, 144);
+
+    render_draw_mesh_solid(
+        NULL,
+        &viewport,
+        g_holomesh,
+        &transform);
+    
+    layer_mark_dirty(bitmap_layer_get_layer(frameBufferLayer));
+}
+
+void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, uint8_t color) {
     // TODO: this check is done outside this function so we could remove this too
     if (x >= row_info->min_x && x <= row_info->max_x) {
         int byte_offset = x >> 2; // divide by 4 to get actual pixel byte
@@ -100,53 +127,11 @@ void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, int color) {
     }
 }
 
-static int paint_tick = 0;
-void paint(void) {
-    int min_y = 30;
-    for (int y = min_y; y < 144; ++y) {
-        GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(frameBufferBitmap, y);
-        int byte_offset = row_info.min_x >> 2;
-        for (int x = row_info.min_x; x < row_info.max_x; x += 4) {
-            uint8_t color[4] = {
-                (rand()) & 1,
-                (rand()) & 1,
-                (rand()) & 1,
-                (rand()) & 1
-            };
-            
-            if (x > 30 && x < 114) {
-                color[0] += 1;
-                color[1] += 1;
-                color[2] += 1;
-                color[3] += 1;
-            }
-            if (x > 50 && x < 94) {
-                color[0] += 1;
-                color[1] += 1;
-                color[2] += 1;
-                color[3] += 1;
-            }
-            
-            uint8_t final = (color[0] << 6) | (color[1] << 4) | (color[2] << 2) | color[3];
-            row_info.data[byte_offset++] = final;
-        }
-    }
-    paint_tick++;
-    
-    layer_mark_dirty(bitmap_layer_get_layer(frameBufferLayer));
-}
-
 void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
     (void) user_ptr;
 
     GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(frameBufferBitmap, y);
-    if (x >= row_info.min_x && x <= row_info.max_x) {
-        int byte_offset = row_info.min_x >> 2;
-        uint8_t src = row_info.data[byte_offset];
-        uint8_t shift = (2 * (x & 3));
-        uint8_t mask = 3 << shift;
-        row_info.data[byte_offset] = (src & ~mask) | (color << shift);
-    }
+    set_pixel_on_row(&row_info, x, color);
 }
 
 void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
@@ -155,6 +140,7 @@ void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
 }
 
 void update_display(Layer* layer, GContext* ctx) {
+/*
     graphics_context_set_antialiased(ctx, true);
     graphics_context_set_stroke_color(ctx, GColorElectricBlue);
     graphics_context_set_stroke_width(ctx, 1);
@@ -181,6 +167,7 @@ void update_display(Layer* layer, GContext* ctx) {
         &viewport,
         g_holomesh,
         &transform);
+*/
 }
 
 bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {
@@ -240,10 +227,10 @@ static bool g_do_title_fade_timer = false;
 static int g_title_fade_timer = 0;
 
 void animation_timer_trigger(void* data) {
-    // TODO: restore me: paint();
+    paint();
     
     // TODO: remove me
-    layer_mark_dirty(uiElementsLayer);
+    //layer_mark_dirty(uiElementsLayer);
     
     if (g_do_title_fade_timer) {
         g_do_title_fade_timer = fade_between_text(textLayer, textLayerSym, g_title_fade_timer++);
