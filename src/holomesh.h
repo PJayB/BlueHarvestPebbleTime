@@ -13,7 +13,7 @@ extern "C" {
 
     ---------------------------------*/
 #define HOLOMESH_MAGIC 0x484f4c4fu // 'HOLO'
-#define HOLOMESH_VERSION 3
+#define HOLOMESH_VERSION 4
 
 #define HOLOMESH_ARRAY_PTR(type) union { type* ptr; int32_t offset; }
 #define HOLOMESH_ARRAY(type) struct { HOLOMESH_ARRAY_PTR(type); uint32_t size; }
