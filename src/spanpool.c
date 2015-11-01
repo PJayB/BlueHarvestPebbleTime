@@ -15,7 +15,7 @@ typedef struct _rasterizer_stepping_span_freelist_node {
 #ifdef SANDBOX
 #   define MAX_SPAN_COUNT 100000
 #else
-#   define MAX_SPAN_COUNT 250
+#   define MAX_SPAN_COUNT 100
 #endif
 
 static rasterizer_stepping_span_freelist_node g_span_pool[MAX_SPAN_COUNT];
