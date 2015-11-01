@@ -13,6 +13,7 @@
 #   include <stdint.h>
 #   define WIN32_LEAN_AND_MEAN
 #   include <Windows.h>
+#   include <stdlib.h>
 #   define ASSERT(x) if (x) {} else { DebugBreak(); }
 #   define SANDBOX
 #   define RASTERIZER_CHECKS
