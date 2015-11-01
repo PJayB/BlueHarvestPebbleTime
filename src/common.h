@@ -48,9 +48,10 @@ typedef struct _vec2 {
 
 typedef struct _holomesh holomesh;
 
-typedef struct _viewport {
-    int width, height;
-} viewport;
+typedef struct viewport_s {
+    uint16_t width, height;
+    fix16_t fwidth, fheight;
+} viewport_t;
 
 void transform_points(
     vec3* out_points,

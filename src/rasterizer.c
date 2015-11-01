@@ -1,7 +1,6 @@
 #include "common.h"
 #include "rasterizer.h"
 #include "holomesh.h"
-#include "facesort.h"
 
 void rasterizer_draw_span(
     rasterizer_context* ctx,
@@ -79,4 +78,70 @@ void rasterizer_advance_stepping_edge(rasterizer_stepping_edge* e, fix16_t y0, f
     e->z += fix16_mul(e->step_z, my);
     e->u += fix16_mul(e->step_u, my);
     e->v += fix16_mul(e->step_v, my);
+}
+
+size_t rasterizer_create_face_kickoffs(rasterizer_face_kickoff* kickoffs, size_t max_kickoffs, const viewport_t* viewport, uint32_t hull_index, const vec3* points, const face_t* faces, size_t num_faces) {
+    rasterizer_face_kickoff* current_kickoff = kickoffs;
+    rasterizer_face_kickoff* end_kickoff = kickoffs + max_kickoffs;
+
+    ASSERT(hull_index < 256);
+    ASSERT(num_faces < 256);
+
+    const face_t* face = faces;
+    for (size_t i = 0; i < num_faces && current_kickoff < end_kickoff; ++i, ++face) {
+        const vec3 a = points[face->positions.a];
+        const vec3 b = points[face->positions.b];
+        const vec3 c = points[face->positions.c];
+
+        // Cross product gives us z direction: if it's facing away from us, ignore it
+        fix16_t ux = fix16_sub(b.x, a.x);
+        fix16_t uy = fix16_sub(b.y, a.y);
+        fix16_t vx = fix16_sub(c.x, a.x);
+        fix16_t vy = fix16_sub(c.y, a.y);
+        if (fix16_sub(fix16_mul(ux, vy), fix16_mul(uy, vx)) < 0)
+            continue;
+
+        fix16_t min_y, max_y, min_x, max_x;
+        min_x = fix16_min(a.x, fix16_min(b.x, c.x));
+        max_x = fix16_max(a.x, fix16_max(b.x, c.x));
+        min_y = fix16_min(a.y, fix16_min(b.y, c.y));
+        max_y = fix16_max(a.y, fix16_max(b.y, c.y));
+
+        // Cull zero size
+        if (min_x == max_x || min_y == max_y)
+            continue;
+
+        // Cull out of bounds
+        if (max_x < 0)
+            continue;
+        if (min_x >= viewport->fwidth)
+            continue;
+        if (max_y < 0)
+            continue;
+        if (min_y >= viewport->fheight)
+            continue;
+
+        // Setup clipping flags
+        uint8_t clip = 0;
+        if (min_x < 0) clip |= rasterizer_clip_left;
+        if (max_x > viewport->fwidth) clip |= rasterizer_clip_right;
+        if (min_y < 0) clip |= rasterizer_clip_top;
+        if (max_y > viewport->fheight) clip |= rasterizer_clip_bottom;
+
+        int16_t kickoff_y = fix16_to_int_floor(min_y);
+
+        current_kickoff->hull_index = (uint8_t) hull_index;
+        current_kickoff->face_index = (uint8_t) i;
+        current_kickoff->y = kickoff_y < 0 ? 0 : kickoff_y;
+        current_kickoff->clip = clip;
+#ifdef SANDBOX
+        current_kickoff->min_x = min_x;
+        current_kickoff->max_x = max_x;
+        current_kickoff->min_y = min_y;
+        current_kickoff->max_y = max_y;
+#endif
+        current_kickoff++;
+    }
+
+    return (size_t)(current_kickoff - kickoffs);
 }
