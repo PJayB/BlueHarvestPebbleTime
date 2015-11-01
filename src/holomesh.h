@@ -20,21 +20,21 @@ extern "C" {
 
 #define HOLOMESH_BAD_REF 0xFFFF
 
-    typedef enum _holomesh_transform_index {
+    typedef enum holomesh_transform_index_e {
         holomesh_transform_perspective_pebble_aspect,
         holomesh_transform_perspective_square_aspect,
         holomesh_transform_left,
         holomesh_transform_front,
         holomesh_transform_top,
         holomesh_transform_count
-    } holomesh_transform_index;
+    } holomesh_transform_index_t;
 
-    typedef enum _holomesh_craft_affiliation {
+    typedef enum holomesh_craft_affiliation_e {
         holomesh_craft_affiliation_neutral,
         holomesh_craft_affiliation_rebel,
         holomesh_craft_affiliation_imperial,
         holomesh_craft_affiliation_bounty_hunter
-    } holomesh_craft_affiliation;
+    } holomesh_craft_affiliation_t;
 
     typedef struct vec2_s holomesh_vec2_t;
     typedef struct vec3_s holomesh_vec3_t;
