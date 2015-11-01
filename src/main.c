@@ -136,6 +136,19 @@ void paint(void) {
     layer_mark_dirty(bitmap_layer_get_layer(frameBufferLayer));
 }
 
+void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
+    (void) user_ptr;
+
+    GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(frameBufferBitmap, y);
+    if (x >= row_info.min_x && x <= row_info.max_x) {
+        int byte_offset = row_info.min_x >> 2;
+        uint8_t src = row_info.data[byte_offset];
+        uint8_t shift = (2 * (x & 3));
+        uint8_t mask = 3 << shift;
+        row_info.data[byte_offset] = (src & ~mask) | (color << shift);
+    }
+}
+
 void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
     GContext* ctx = (GContext*) user_ptr;
     graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
