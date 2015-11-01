@@ -57,14 +57,13 @@ typedef struct _rasterizer_context {
     void* user_ptr;
 } rasterizer_context;
 
-void rasterizer_draw_span(
-    rasterizer_context* ctx,
-    const holomesh_texture* texture,
-    int16_t ia, int16_t ib,
-    int16_t iy,
-    fix16_t az, fix16_t bz,
-    fix16_t ua, fix16_t ub,
-    fix16_t va, fix16_t vb);
+void rasterizer_draw_span(rasterizer_context* ctx, const holomesh_texture* texture, int16_t ia, int16_t ib, int16_t iy, fix16_t az, fix16_t bz, fix16_t ua, fix16_t ub, fix16_t va, fix16_t vb);
+void rasterizer_advance_stepping_edge(rasterizer_stepping_edge* e, fix16_t y0, fix16_t y);
+
+void rasterizer_init_span_pool(void);
+rasterizer_stepping_span* rasterizer_allocate_stepping_span(void);
+void rasterizer_free_stepping_span(rasterizer_stepping_span* span);
+size_t rasterizer_get_active_stepping_span_count(void);
 
 #ifdef __cplusplus
 }

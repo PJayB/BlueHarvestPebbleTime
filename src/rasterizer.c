@@ -70,3 +70,13 @@ void rasterizer_draw_span(
     }
 }
 
+void rasterizer_advance_stepping_edge(rasterizer_stepping_edge* e, fix16_t y0, fix16_t y) {
+    fix16_t my = fix16_sub(y, y0);
+    if (my == 0)
+        return;
+
+    e->x += fix16_mul(e->step_x, my);
+    e->z += fix16_mul(e->step_z, my);
+    e->u += fix16_mul(e->step_u, my);
+    e->v += fix16_mul(e->step_v, my);
+}
