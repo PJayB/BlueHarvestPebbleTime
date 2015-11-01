@@ -102,6 +102,36 @@ void rasterizer_draw_span_between_edges(rasterizer_context* ctx, const texture_t
     edge2->v += edge2->step_v;
 }
 
+rasterizer_stepping_span* rasterizer_draw_active_spans(rasterizer_context* ctx, const texture_t* textures, rasterizer_stepping_span* active_span_list, uint16_t y) {
+    rasterizer_stepping_span* new_active_span_list = NULL;
+    rasterizer_stepping_span* next_span = active_span_list;
+    while (next_span != NULL) {
+        rasterizer_stepping_span* span = next_span;
+        next_span = span->next_span;
+
+        // If the span intersects this scanline, draw it
+        if (span->y0 <= y && span->y1 > y) {
+            const texture_t* texture = &textures[span->texture_id];
+            rasterizer_draw_span_between_edges(
+                ctx,
+                texture,
+                &span->e0,
+                &span->e1,
+                y);
+        }
+
+        // If this span is still relevant, push it to the new list
+        // else, retire it
+        if (y < span->y1 - 1) {
+            span->next_span = new_active_span_list;
+            new_active_span_list = span;
+        } else {
+            rasterizer_free_stepping_span(span);
+        }
+    }
+    return new_active_span_list;
+}
+
 void rasterizer_advance_stepping_edge(rasterizer_stepping_edge* e, fix16_t y0, fix16_t y) {
     fix16_t my = fix16_sub(y, y0);
     if (my == 0)
