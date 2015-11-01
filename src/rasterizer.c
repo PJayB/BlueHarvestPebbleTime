@@ -132,6 +132,134 @@ rasterizer_stepping_span* rasterizer_draw_active_spans(rasterizer_context* ctx, 
     return new_active_span_list;
 }
 
+void rasterizer_init_stepping_edge(rasterizer_stepping_edge* e, rasterizer_stepping_edge_y* ys, const vec3_t* a, const vec3_t* b, const vec2_t* uva, const vec2_t* uvb) {
+
+    // Sort by Y
+    if (a->y > b->y) {
+        const vec3_t* t3 = a;
+        a = b;
+        b = t3;
+
+        const vec2_t* t2 = uva;
+        uva = uvb;
+        uvb = t2;
+    }
+
+    ys->y0 = a->y;
+    ys->y1 = b->y;
+    ys->d = fix16_sub(b->y, a->y);
+
+    fix16_t dx = fix16_sub(b->x, a->x);
+    fix16_t step_t = fix16_rcp(ys->d);
+
+#ifdef RASTERIZER_CHECKS
+    e->min_x = fix16_min(a->x, b->x);
+    e->max_x = fix16_max(b->x, a->x);
+#endif
+
+    e->step_x = fix16_mul(dx, step_t);
+    e->x = a->x;
+    e->step_z = fix16_mul(fix16_sub(b->z, a->z), step_t);
+    e->z = a->z;
+    e->step_u = fix16_mul(fix16_sub(uvb->x, uva->x), step_t);
+    e->u = uva->x;
+    e->step_v = fix16_mul(fix16_sub(uvb->y, uva->y), step_t);
+    e->v = uva->y;
+}
+
+/*
+void rasterizer_create_spans_for_triangle(
+    const viewport_t* viewport,
+    const texture_t* texture,
+    const vec3_t* a, const vec2_t* uva,
+    const vec3_t* b, const vec2_t* uvb,
+    const vec3_t* c, const vec2_t* uvc,
+    int16_t start_y) {
+    // Must be within bounds
+    ASSERT(a.x.value >= 0);
+    ASSERT(a.y.value >= 0);
+    ASSERT(b.x.value >= 0);
+    ASSERT(b.y.value >= 0);
+    ASSERT(c.x.value >= 0);
+    ASSERT(c.y.value >= 0);
+    ASSERT(a.x.value <= viewport->fwidth);
+    ASSERT(a.y.value <= viewport->fheight);
+    ASSERT(b.x.value <= viewport->fwidth);
+    ASSERT(b.y.value <= viewport->fheight);
+    ASSERT(c.x.value <= viewport->fwidth);
+    ASSERT(c.y.value <= viewport->fheight);
+
+    // Each point's xy coordinate should have been floored
+    ASSERT((a.x.value & 0xFFFF) == 0);
+    ASSERT((a.y.value & 0xFFFF) == 0);
+    ASSERT((b.x.value & 0xFFFF) == 0);
+    ASSERT((b.y.value & 0xFFFF) == 0);
+    ASSERT((c.x.value & 0xFFFF) == 0);
+    ASSERT((c.y.value & 0xFFFF) == 0);
+
+    rasterizer_stepping_edge edges[3];
+    rasterizer_stepping_edge_y edgeYs[3];
+    rasterizer_init_stepping_edge(&edges[0], &edgeYs[0], a, b, uva, uvb);
+    rasterizer_init_stepping_edge(&edges[1], &edgeYs[1], b, c, uvb, uvc);
+    rasterizer_init_stepping_edge(&edges[2], &edgeYs[2], a, c, uva, uvc);
+
+    // Which edge is the longest? We'll be stepping along that edge
+    int longest_edge_index = 0;
+    fix16_t max_length = 0;
+    for (int i = 0; i < 3; ++i)
+    {
+        if (edgeYs[i].d > max_length)
+        {
+            max_length = edgeYs[i].d;
+            longest_edge_index = i;
+        }
+    }
+
+    if (max_length == 0)
+        return;
+
+    rasterizer_stepping_edge* e0 = &edges[longest_edge_index];
+    rasterizer_stepping_edge* e1 = &edges[(longest_edge_index + 1) % 3];
+    rasterizer_stepping_edge* e2 = &edges[(longest_edge_index + 2) % 3];
+
+    rasterizer_stepping_edge_y* ey0 = &edgeYs[longest_edge_index];
+    rasterizer_stepping_edge_y* ey1 = &edgeYs[(longest_edge_index + 1) % 3];
+    rasterizer_stepping_edge_y* ey2 = &edgeYs[(longest_edge_index + 2) % 3];
+
+    // Draw the spans
+    if (ey1->d)
+    {
+        CreateSteppingSpan(e0, ey0, e1, ey1, viewport->fheight, texture, start_y);
+    }
+
+    if (ey2->d)
+    {
+        CreateSteppingSpan(e0, ey0, e2, ey2, viewport->fheight, texture, start_y);
+    }
+}
+
+void rasterizer_create_face_spans(const viewport_t* viewport, const face_t* face, const vec3_t* points, const vec2_t* texcoords, const texture_t* texture, uint16_t y, uint8_t needs_clip) {
+    vec2_t uva = texcoords[face->uvs.a];
+    vec2_t uvb = texcoords[face->uvs.b];
+    vec2_t uvc = texcoords[face->uvs.c];
+    vec3_t a = points[face->positions.a];
+    vec3_t b = points[face->positions.b];
+    vec3_t c = points[face->positions.c];
+
+    // Do perspective correction on the UVs
+    uva.x = fix16_mul(uva.x, a.z);
+    uva.y = fix16_mul(uva.y, a.z);
+    uvb.x = fix16_mul(uvb.x, b.z);
+    uvb.y = fix16_mul(uvb.y, b.z);
+    uvc.x = fix16_mul(uvc.x, c.z);
+    uvc.y = fix16_mul(uvc.y, c.z);
+
+    if (needs_clip == 0) {
+    } else {
+    }
+}
+*/
+
 void rasterizer_advance_stepping_edge(rasterizer_stepping_edge* e, fix16_t y0, fix16_t y) {
     fix16_t my = fix16_sub(y, y0);
     if (my == 0)
