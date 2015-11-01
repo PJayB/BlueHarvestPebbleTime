@@ -1,9 +1,7 @@
 #include "common.h"
 #include "holomesh.h"
 #include "matrix.h"
-#include "wireframe.h"
 #include "render.h"
-#include "scratch.h"
 
 char g_sample_craft_name_lower[256] = {0};
 
@@ -84,8 +82,8 @@ void load_holomesh(void) {
     holomesh_result hr = holomesh_deserialize(g_holomesh, size);
     ASSERT(hr == hmresult_ok);
     
-    // Allocate scratch
-    scratch_init(g_holomesh->scratch_size);
+    // Allocate renderer resources
+    render_init(g_holomesh->scratch_size);
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "HOLOMESH: %u bytes, %u scratch size", 
             (unsigned) size,
@@ -148,7 +146,7 @@ void update_display(Layer* layer, GContext* ctx) {
     graphics_context_set_stroke_color(ctx, GColorElectricBlue);
     graphics_context_set_stroke_width(ctx, 1);
     
-    scratch_clear();
+    render_prep_frame();
 
     // Get the projection matrix_t
     matrix_t transform;
@@ -165,14 +163,11 @@ void update_display(Layer* layer, GContext* ctx) {
     viewport_t viewport;
     viewport_init(&viewport, 144, 144);
 
-    vec3_t* transformed_vertices = (vec3_t*) scratch_alloc(scratch_size_bytes());
-
     render_draw_mesh_wireframe(
         ctx,
         &viewport,
         g_holomesh,
-        &transform,
-        transformed_vertices);
+        &transform);
 }
 
 bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {

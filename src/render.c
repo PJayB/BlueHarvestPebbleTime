@@ -15,6 +15,10 @@ void render_init(size_t scratch_size) {
     scratch_init(scratch_size);
 }
 
+void render_prep_frame(void) {
+    scratch_clear();
+}
+
 void render_create_3d_transform(matrix_t* out, const matrix_t* proj, fix16_t angle) {
     // Rotate the transform
     matrix_t rotation;

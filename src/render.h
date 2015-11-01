@@ -5,6 +5,7 @@ extern "C" {
 #endif
 
 void render_init(size_t scratch_size);
+void render_prep_frame(void);
 void render_create_3d_transform(matrix_t* out, const matrix_t* proj, fix16_t angle);
 void render_transform_hull(const holomesh_hull_t* hull, const matrix_t* transform, fix16_t viewport_half_width, fix16_t viewport_half_height, vec3_t* transformed_vertices);
 void render_draw_hull_wireframe(void* user_ptr, const holomesh_hull_t* hull, const vec3_t* transformed_vertices);
