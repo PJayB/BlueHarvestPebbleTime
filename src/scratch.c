@@ -43,7 +43,9 @@ void* scratch_alloc(size_t size) {
     g_scratch_offset += size;
 
 #ifdef RASTERIZER_CHECKS
-    g_scratch_hwm = max(g_scratch_hwm, g_scratch_offset);
+    if (g_scratch_offset > g_scratch_hwm) {
+        g_scratch_hwm = g_scratch_offset;
+    }
 #endif
 
     return g_scratch + offset;
