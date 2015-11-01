@@ -2,6 +2,8 @@
 #include "holomesh.h"
 #include "matrix.h"
 #include "wireframe.h"
+#include "render.h"
+#include "scratch.h"
 
 char g_sample_craft_name_lower[256] = {0};
 
@@ -64,7 +66,6 @@ AppTimer* g_timer;
 
 // Rendering stuff
 holomesh_t* g_holomesh;
-vec3_t* g_scratch;
 
 void load_holomesh(void) {
     ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_CORELLIAN_TRANSPORT);
@@ -84,12 +85,11 @@ void load_holomesh(void) {
     ASSERT(hr == hmresult_ok);
     
     // Allocate scratch
-    size_t scratch_size = g_holomesh->scratch_size;
-    g_scratch = (vec3_t*) malloc(scratch_size);
+    scratch_init(g_holomesh->scratch_size);
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "HOLOMESH: %u bytes, %u scratch size", 
             (unsigned) size,
-            (unsigned) scratch_size);
+            (unsigned) g_holomesh->scratch_size);
 }
 
 void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, int color) {
@@ -143,68 +143,36 @@ void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
     graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
 }
 
-void transform_mesh(void) {
-    fix16_t halfViewportSize = fix16_from_int(144 / 2);
-    
-    // Get the projection matrix_t
-    const matrix_t* proj = (const matrix_t*) &g_holomesh->transforms[holomesh_transform_perspective_square_aspect];
-    
-    // Create a rotation matrix_t
-    static fix16_t angle = 0;
-    matrix_t rotation;
-    matrix_create_rotation_z(&rotation, angle);
-    angle += (fix16_one >> 4);
-    
-    // Create the final transform
-    matrix_t transform;
-    matrix_multiply(&transform, &rotation, proj);
-    
-    vec3_t* out_v = g_scratch; 
-    
-    for (size_t hull_index = 0; hull_index < g_holomesh->hulls.size; ++hull_index) {
-        holomesh_hull_t* hull = &g_holomesh->hulls.ptr[hull_index];
-        
-        // Transform all the points
-        for (size_t i = 0; i < hull->vertices.size; ++i, ++out_v) {
-            vec3_t v;
-            v.x = hull->vertices.ptr[i].x;
-            v.y = hull->vertices.ptr[i].y;
-            v.z = hull->vertices.ptr[i].z;
-            
-            matrix_vector_transform(&v, &transform);
-            
-            v.x = fix16_floor(fix16_add(fix16_mul(v.x, halfViewportSize), halfViewportSize));
-            v.y = fix16_floor(fix16_add(fix16_mul(v.y, halfViewportSize), halfViewportSize));
-        
-            *out_v = v;
-        }
-    }
-}
-
 void update_display(Layer* layer, GContext* ctx) {
     graphics_context_set_antialiased(ctx, true);
     graphics_context_set_stroke_color(ctx, GColorElectricBlue);
     graphics_context_set_stroke_width(ctx, 1);
     
+    scratch_clear();
+
+    // Get the projection matrix_t
+    matrix_t transform;
+    static fix16_t angle = 0;
+
+    render_create_3d_transform(
+        &transform, 
+        &g_holomesh->transforms[holomesh_transform_perspective_square_aspect], 
+        angle);
+
+    angle += fix16_one >> 4;
+
     // Transform the mesh
-    transform_mesh();
-        
-    vec3_t* scratch_vertices = g_scratch; 
-    
-    for (size_t hull_index = 0; hull_index < g_holomesh->hulls.size; ++hull_index) {
-        holomesh_hull_t* hull = &g_holomesh->hulls.ptr[hull_index];
-        
-        // Render the edges
-        wireframe_context wfctx;
-        wfctx.edge_indices = (const uint8_t*) hull->edges.ptr;
-        wfctx.num_edges = hull->edges.size;
-        wfctx.points = (vec3_t*) scratch_vertices;
-        wfctx.user_ptr = ctx;
-        wireframe_draw(&wfctx);
-        
-        // Move on from scratch
-        scratch_vertices += hull->vertices.size;
-    }
+    viewport_t viewport;
+    viewport_init(&viewport, 144, 144);
+
+    vec3_t* transformed_vertices = (vec3_t*) scratch_alloc(scratch_size_bytes());
+
+    render_draw_mesh_wireframe(
+        ctx,
+        &viewport,
+        g_holomesh,
+        &transform,
+        transformed_vertices);
 }
 
 bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {
