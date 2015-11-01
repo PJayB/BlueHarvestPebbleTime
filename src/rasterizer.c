@@ -102,7 +102,7 @@ void rasterizer_draw_span_between_edges(rasterizer_context* ctx, const texture_t
     edge2->v += edge2->step_v;
 }
 
-rasterizer_stepping_span* rasterizer_draw_active_spans(rasterizer_context* ctx, const texture_t* textures, rasterizer_stepping_span* active_span_list, uint16_t y) {
+rasterizer_stepping_span* rasterizer_draw_active_spans(rasterizer_context* ctx, rasterizer_stepping_span* active_span_list, uint16_t y) {
     rasterizer_stepping_span* new_active_span_list = NULL;
     rasterizer_stepping_span* next_span = active_span_list;
     while (next_span != NULL) {
@@ -111,7 +111,7 @@ rasterizer_stepping_span* rasterizer_draw_active_spans(rasterizer_context* ctx, 
 
         // If the span intersects this scanline, draw it
         if (span->y0 <= y && span->y1 > y) {
-            const texture_t* texture = &textures[span->texture_id];
+            const texture_t* texture = span->texture;
             rasterizer_draw_span_between_edges(
                 ctx,
                 texture,
@@ -165,6 +165,24 @@ void rasterizer_init_stepping_edge(rasterizer_stepping_edge* e, rasterizer_stepp
     e->u = uva->x;
     e->step_v = fix16_mul(fix16_sub(uvb->y, uva->y), step_t);
     e->v = uva->y;
+}
+
+rasterizer_stepping_span* rasterizer_create_stepping_span(rasterizer_stepping_span* span_list, const texture_t* texture, rasterizer_stepping_edge* e0, const rasterizer_stepping_edge_y* ey0, rasterizer_stepping_edge* e1, const rasterizer_stepping_edge_y* ey1, int16_t start_y) {
+    rasterizer_stepping_span* span = rasterizer_allocate_stepping_span();
+    span->e0 = *e0;
+    span->e1 = *e1;
+    span->y0 = fix16_to_int_floor(ey1->y0);
+    span->y1 = fix16_to_int_floor(ey1->y1);
+    span->texture = texture;
+    span->next_span = span_list;
+
+    ASSERT(start_y >= 0);
+    ASSERT(span->y0 < span->y1);
+    ASSERT(span->y0 >= start_y);
+
+    rasterizer_advance_stepping_edge(&span->e0, ey0->y0, ey1->y0);
+
+    return span;
 }
 
 /*

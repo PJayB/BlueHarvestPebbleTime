@@ -69,8 +69,8 @@ typedef struct _rasterizer_stepping_edge {
 typedef struct _rasterizer_stepping_span {
     rasterizer_stepping_edge e0, e1;
     struct _rasterizer_stepping_span* next_span;
+    const texture_t* texture;
     uint16_t y0, y1;
-    uint8_t texture_id;
 } rasterizer_stepping_span;
 
 typedef struct _rasterizer_context {
@@ -89,7 +89,8 @@ void rasterizer_create_face_spans(const viewport_t* viewport, const face_t* face
 
 void rasterizer_draw_span(rasterizer_context* ctx, const texture_t* texture, int16_t ia, int16_t ib, int16_t iy, fix16_t az, fix16_t bz, fix16_t ua, fix16_t ub, fix16_t va, fix16_t vb);
 void rasterizer_draw_span_between_edges(rasterizer_context* ctx, const texture_t* texture, rasterizer_stepping_edge* edge1, rasterizer_stepping_edge* edge2, int16_t iy);
-rasterizer_stepping_span* rasterizer_draw_active_spans(rasterizer_context* ctx, const texture_t* textures, rasterizer_stepping_span* active_span_list, uint16_t y);
+rasterizer_stepping_span* rasterizer_create_stepping_span(rasterizer_stepping_span* span_list, const texture_t* texture, rasterizer_stepping_edge* e0, const rasterizer_stepping_edge_y* ey0, rasterizer_stepping_edge* e1, const rasterizer_stepping_edge_y* ey1, int16_t start_y);
+rasterizer_stepping_span* rasterizer_draw_active_spans(rasterizer_context* ctx, rasterizer_stepping_span* active_span_list, uint16_t y);
 
 void rasterizer_init_stepping_edge(rasterizer_stepping_edge* e, rasterizer_stepping_edge_y* ys, const vec3_t* a, const vec3_t* b, const vec2_t* uva, const vec2_t* uvb);
 void rasterizer_advance_stepping_edge(rasterizer_stepping_edge* e, fix16_t y0, fix16_t y);
