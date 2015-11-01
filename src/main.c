@@ -63,7 +63,7 @@ GFont g_font_info;
 AppTimer* g_timer;
 
 // Rendering stuff
-holomesh* g_holomesh;
+holomesh_t* g_holomesh;
 vec3_t* g_scratch;
 
 void load_holomesh(void) {
@@ -72,7 +72,7 @@ void load_holomesh(void) {
     // Allocate space for the resource
     // TODO: estimate this better
     size_t size = resource_size(handle);
-    g_holomesh = (holomesh*) malloc(size);
+    g_holomesh = (holomesh_t*) malloc(size);
     
     // Load it
     size_t copied = resource_load(handle, (uint8_t*) g_holomesh, size);
@@ -162,7 +162,7 @@ void transform_mesh(void) {
     vec3_t* out_v = g_scratch; 
     
     for (size_t hull_index = 0; hull_index < g_holomesh->hulls.size; ++hull_index) {
-        holomesh_hull* hull = &g_holomesh->hulls.ptr[hull_index];
+        holomesh_hull_t* hull = &g_holomesh->hulls.ptr[hull_index];
         
         // Transform all the points
         for (size_t i = 0; i < hull->vertices.size; ++i, ++out_v) {
@@ -192,7 +192,7 @@ void update_display(Layer* layer, GContext* ctx) {
     vec3_t* scratch_vertices = g_scratch; 
     
     for (size_t hull_index = 0; hull_index < g_holomesh->hulls.size; ++hull_index) {
-        holomesh_hull* hull = &g_holomesh->hulls.ptr[hull_index];
+        holomesh_hull_t* hull = &g_holomesh->hulls.ptr[hull_index];
         
         // Render the edges
         wireframe_context wfctx;
