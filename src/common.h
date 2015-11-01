@@ -2,12 +2,20 @@
 
 #ifndef WIN32
 #   include <pebble.h>
-#   define ASSERT(x) if (x) {} else { APP_LOG(APP_LOG_LEVEL_ERROR, "Assert! " #x); }
+// TODO: don't define this for the shipping version!
+#   define RASTERIZER_CHECKS
+#   ifdef RASTERIZER_CHECKS
+#       define ASSERT(x) if (x) {} else { APP_LOG(APP_LOG_LEVEL_ERROR, "Assert! " #x); }
+#   else
+#       define ASSERT(x) 
+#   endif
 #else
 #   include <stdint.h>
 #   define WIN32_LEAN_AND_MEAN
 #   include <Windows.h>
 #   define ASSERT(x) if (x) {} else { DebugBreak(); }
+#   define SANDBOX
+#   define RASTERIZER_CHECKS
 #endif
 
 #include "libfixmath/fix16.h"

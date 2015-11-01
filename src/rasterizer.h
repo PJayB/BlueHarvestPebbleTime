@@ -30,6 +30,28 @@ extern void rasterizer_set_pixel(
     int x, int y,
     uint8_t color);
 
+typedef struct _rasterizer_stepping_edge_y {
+    fix16_t y0, y1, d;
+} rasterizer_stepping_edge_y;
+
+typedef struct _rasterizer_stepping_edge {
+    fix16_t x, step_x;
+    fix16_t z, step_z;
+    fix16_t u, step_u;
+    fix16_t v, step_v;
+
+#ifdef RASTERIZER_CHECKS
+    fix16_t min_x, max_x;
+#endif
+} rasterizer_stepping_edge;
+
+typedef struct _rasterizer_stepping_span {
+    rasterizer_stepping_edge e0, e1;
+    struct _rasterizer_stepping_span* next_span;
+    uint16_t y0, y1;
+    uint8_t texture_id;
+} rasterizer_stepping_span;
+
 typedef struct _rasterizer_context {
     fix16_t* depths;
     void* user_ptr;
