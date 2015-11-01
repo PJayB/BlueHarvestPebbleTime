@@ -4,7 +4,7 @@
 
 void rasterizer_draw_span(
     rasterizer_context* ctx,
-    const holomesh_texture_t* texture,
+    const texture_t* texture,
     int16_t ia, int16_t ib,
     int16_t iy,
     fix16_t az, fix16_t bz,
@@ -67,6 +67,39 @@ void rasterizer_draw_span(
         base_u += step_u;
         base_v += step_v;
     }
+}
+
+void rasterizer_draw_span_between_edges(rasterizer_context* ctx, const texture_t* texture, rasterizer_stepping_edge* edge1, rasterizer_stepping_edge* edge2, int16_t iy) {
+    if (edge1->x > edge2->x) {
+        rasterizer_stepping_edge* t = edge1;
+        edge1 = edge2;
+        edge2 = t;
+    }
+
+    fix16_t x0 = edge1->x;
+    fix16_t x1 = edge2->x;
+
+    ASSERT(x0 >= edge1->min_x && x0 <= edge1->max_x);
+    ASSERT(x1 >= edge2->min_x && x1 <= edge2->max_x);
+
+    rasterizer_draw_span(
+        ctx,
+        texture,
+        fix16_to_int_floor(x0),
+        fix16_to_int_floor(x1),
+        iy,
+        edge1->z, edge2->z,
+        edge1->u, edge2->u,
+        edge1->v, edge2->v);
+
+    edge1->x += edge1->step_x;
+    edge2->x += edge2->step_x;
+    edge1->z += edge1->step_z;
+    edge2->z += edge2->step_z;
+    edge1->u += edge1->step_u;
+    edge2->u += edge2->step_u;
+    edge1->v += edge1->step_v;
+    edge2->v += edge2->step_v;
 }
 
 void rasterizer_advance_stepping_edge(rasterizer_stepping_edge* e, fix16_t y0, fix16_t y) {
