@@ -53,8 +53,16 @@ void scratch_clear(void) {
     g_scratch_offset = 0;
 }
 
+size_t scratch_used_bytes(void) {
+    return g_scratch_offset;
+}
+
+size_t scratch_size_bytes(void) {
+    return g_scratch_size;
+}
+
 #ifdef RASTERIZER_CHECKS
-size_t scratch_get_high_watermark(void) {
+size_t scratch_get_high_watermark_bytes(void) {
     return g_scratch_hwm;
 }
 #endif
