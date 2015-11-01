@@ -29,6 +29,9 @@ void quicksort(rasterizer_face_kickoff* faces, int low, int high) {
 }
 
 void rasterizer_sort_face_kickoffs(rasterizer_face_kickoff* faces, size_t num_faces) {
+#ifndef SANDBOX
+    ASSERT(sizeof(rasterizer_face_kickoff) == 4);
+#endif
     if (num_faces > 1) {
         quicksort(faces, 0, (int) num_faces - 1);
     }
