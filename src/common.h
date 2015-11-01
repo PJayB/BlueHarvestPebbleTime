@@ -76,6 +76,8 @@ void transform_points(
     const vec3_t* in_points,
     size_t num_points);
 
+void viewport_init(viewport_t* viewport, uint16_t width, uint16_t height);
+
 #ifdef __cplusplus
 }
 #endif
