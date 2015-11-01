@@ -75,8 +75,11 @@ extern "C" {
 
     typedef struct _holomesh_texture {
         HOLOMESH_ARRAY(uint8_t) data;
-        uint16_t widthMinusOne;
-        uint16_t heightMinusOne;
+        uint32_t scale_u;
+        uint32_t scale_v;
+        uint16_t stride;
+        uint16_t width;
+        uint16_t height;
     } holomesh_texture;
 
     typedef struct _holomesh_info_point {

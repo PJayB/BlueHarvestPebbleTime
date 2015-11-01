@@ -232,8 +232,11 @@ holomesh_result holomesh_unpack_texture(uint8_t* dst, uint32_t dstSize, const ui
 }
 
 void holomesh_set_texture(holomesh_texture* texture, uint8_t* data, uint32_t dataSize, uint16_t width, uint16_t height) {
-    texture->heightMinusOne = height - 1;
-    texture->widthMinusOne = width - 1;
+    texture->height = height;
+    texture->width = width;
+    texture->scale_u = fix16_from_int(texture->width - 1);
+    texture->scale_v = fix16_from_int(texture->height - 1);
+    texture->stride = (uint16_t)holomesh_texture_data_stride(width);
     texture->data.ptr = data;
     texture->data.size = dataSize;
 }
