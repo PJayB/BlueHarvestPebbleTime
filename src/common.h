@@ -16,6 +16,8 @@
 #   define ASSERT(x) if (x) {} else { DebugBreak(); }
 #   define SANDBOX
 #   define RASTERIZER_CHECKS
+#   pragma warning(disable: 4204)
+#   pragma warning(disable: 4214)
 #endif
 
 #include "libfixmath/fix16.h"
