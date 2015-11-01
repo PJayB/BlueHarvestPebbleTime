@@ -90,8 +90,17 @@ void load_holomesh(void) {
             (unsigned) g_holomesh->scratch_size);
 }
 
+void clear_framebuffer(void) {
+    for (int i = 0; i < 144; ++i) {
+        GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(frameBufferBitmap, i);
+        memset(row_info.data, 0, 144 >> 2);
+    }
+}
+
 void paint(void) {
     render_prep_frame();
+
+    clear_framebuffer();
 
     // Get the projection matrix_t
     matrix_t transform;
