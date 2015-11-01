@@ -143,6 +143,19 @@ rasterizer_stepping_span* rasterizer_clip_spans_for_triangle(rasterizer_stepping
         if (min_y >= bottom)
             continue;
 
+        ASSERT(clip_a->p.x >= 0);
+        ASSERT(clip_a->p.y >= 0);
+        ASSERT(clip_b->p.x >= 0);
+        ASSERT(clip_b->p.y >= 0);
+        ASSERT(clip_c->p.x >= 0);
+        ASSERT(clip_c->p.y >= 0);
+        ASSERT(clip_a->p.x <= right);
+        ASSERT(clip_a->p.y <= bottom);
+        ASSERT(clip_b->p.x <= right);
+        ASSERT(clip_b->p.y <= bottom);
+        ASSERT(clip_c->p.x <= right);
+        ASSERT(clip_c->p.y <= bottom);
+
         span_list = rasterizer_create_spans_for_triangle(
             span_list,
             texture,

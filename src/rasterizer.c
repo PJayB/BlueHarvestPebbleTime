@@ -246,8 +246,7 @@ rasterizer_stepping_span* rasterizer_create_spans_for_triangle(rasterizer_steppi
     return span_list;
 }
 
-/*
-void rasterizer_create_face_spans(const viewport_t* viewport, const face_t* face, const vec3_t* points, const vec2_t* texcoords, const texture_t* texture, uint16_t y, uint8_t needs_clip) {
+rasterizer_stepping_span* rasterizer_create_face_spans(rasterizer_stepping_span* span_list, const viewport_t* viewport, const face_t* face, const vec3_t* points, const vec2_t* texcoords, const texture_t* texture, uint16_t y, uint8_t needs_clip) {
     vec2_t uva = texcoords[face->uvs.a];
     vec2_t uvb = texcoords[face->uvs.b];
     vec2_t uvc = texcoords[face->uvs.c];
@@ -263,11 +262,27 @@ void rasterizer_create_face_spans(const viewport_t* viewport, const face_t* face
     uvc.x = fix16_mul(uvc.x, c.z);
     uvc.y = fix16_mul(uvc.y, c.z);
 
-    if (needs_clip == 0) {
+    if (needs_clip != 0) {
+        span_list = rasterizer_clip_spans_for_triangle(
+            span_list,
+            viewport,
+            texture,
+            &a, &uva,
+            &b, &uvb,
+            &c, &uvc,
+            y);
     } else {
+        span_list = rasterizer_create_spans_for_triangle(
+            span_list,
+            texture,
+            &a, &uva,
+            &b, &uvb,
+            &c, &uvc,
+            y);
     }
+
+    return span_list;
 }
-*/
 
 void rasterizer_advance_stepping_edge(rasterizer_stepping_edge* e, fix16_t y0, fix16_t y) {
     fix16_t my = fix16_sub(y, y0);
