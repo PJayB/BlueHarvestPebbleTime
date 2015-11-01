@@ -24,39 +24,53 @@
 extern "C" {
 #endif
 
-typedef struct _matrix {
+typedef struct matrix_s {
     fix16_t m[4][4];
-} matrix;
+} matrix_t;
 
-typedef struct _vec3 {
+typedef struct vec3_s {
     union {
         fix16_t v[3];
         struct {
             fix16_t x, y, z;
         };
     };
-} vec3;
+} vec3_t;
 
-typedef struct _vec2 {
+typedef struct vec2_s {
     union {
         fix16_t v[2];
         struct {
             fix16_t x, y;
         };
     };
-} vec2;
+} vec2_t;
 
-typedef struct _holomesh holomesh;
+typedef struct edge_s {
+    uint8_t a, b;
+} edge_t;
+
+typedef struct face_indices_s {
+    uint8_t a, b, c;
+} face_indices_t;
+
+typedef struct face_s {
+    face_indices_t positions;
+    face_indices_t uvs;
+    uint8_t texture;
+} face_t;
 
 typedef struct viewport_s {
     uint16_t width, height;
     fix16_t fwidth, fheight;
 } viewport_t;
 
+typedef struct holomesh_s holomesh_t;
+
 void transform_points(
-    vec3* out_points,
-    const matrix transform,
-    const vec3* in_points,
+    vec3_t* out_points,
+    const matrix_t transform,
+    const vec3_t* in_points,
     size_t num_points);
 
 #ifdef __cplusplus

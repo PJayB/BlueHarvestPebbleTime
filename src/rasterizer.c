@@ -4,7 +4,7 @@
 
 void rasterizer_draw_span(
     rasterizer_context* ctx,
-    const holomesh_texture* texture,
+    const holomesh_texture_t* texture,
     int16_t ia, int16_t ib,
     int16_t iy,
     fix16_t az, fix16_t bz,
@@ -80,7 +80,7 @@ void rasterizer_advance_stepping_edge(rasterizer_stepping_edge* e, fix16_t y0, f
     e->v += fix16_mul(e->step_v, my);
 }
 
-size_t rasterizer_create_face_kickoffs(rasterizer_face_kickoff* kickoffs, size_t max_kickoffs, const viewport_t* viewport, uint32_t hull_index, const vec3* points, const face_t* faces, size_t num_faces) {
+size_t rasterizer_create_face_kickoffs(rasterizer_face_kickoff* kickoffs, size_t max_kickoffs, const viewport_t* viewport, uint32_t hull_index, const vec3_t* points, const face_t* faces, size_t num_faces) {
     rasterizer_face_kickoff* current_kickoff = kickoffs;
     rasterizer_face_kickoff* end_kickoff = kickoffs + max_kickoffs;
 
@@ -89,9 +89,9 @@ size_t rasterizer_create_face_kickoffs(rasterizer_face_kickoff* kickoffs, size_t
 
     const face_t* face = faces;
     for (size_t i = 0; i < num_faces && current_kickoff < end_kickoff; ++i, ++face) {
-        const vec3 a = points[face->positions.a];
-        const vec3 b = points[face->positions.b];
-        const vec3 c = points[face->positions.c];
+        const vec3_t a = points[face->positions.a];
+        const vec3_t b = points[face->positions.b];
+        const vec3_t c = points[face->positions.c];
 
         // Cross product gives us z direction: if it's facing away from us, ignore it
         fix16_t ux = fix16_sub(b.x, a.x);

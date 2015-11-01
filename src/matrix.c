@@ -1,7 +1,7 @@
 #include "common.h"
 #include "matrix.h"
 
-void matrix_create_rotation_z(matrix* M, fix16_t angle) {
+void matrix_create_rotation_z(matrix_t* M, fix16_t angle) {
     fix16_t sa = fix16_sin(angle);
     fix16_t ca = fix16_cos(angle);
 
@@ -26,7 +26,7 @@ void matrix_create_rotation_z(matrix* M, fix16_t angle) {
     M->m[3][3] = fix16_one;
 }
 
-void matrix_multiply(matrix* out, const matrix* a, const matrix* b) {
+void matrix_multiply(matrix_t* out, const matrix_t* a, const matrix_t* b) {
     ASSERT((size_t)out != (size_t)a);
     ASSERT((size_t)out != (size_t)b);
     fix16_t x = a->m[0][0];
@@ -63,7 +63,7 @@ void matrix_multiply(matrix* out, const matrix* a, const matrix* b) {
     out->m[3][3] = fix16_add(fix16_add(fix16_mul(b->m[0][3], x), fix16_mul(b->m[1][3], y)), fix16_add(fix16_mul(b->m[2][3], z), fix16_mul(b->m[3][3], w)));
 }
 
-void matrix_vector_transform(vec3* V, const matrix* M) {
+void matrix_vector_transform(vec3_t* V, const matrix_t* M) {
     //fW = (M->m[0][3] * V->x) + (M->m[1][3] * V->y) + (M->m[2][3] * V->z) + M->m[3][3];
     fix16_t fW = 
         fix16_add(fix16_mul(M->m[0][3], V->v[0]),

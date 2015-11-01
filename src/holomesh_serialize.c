@@ -84,21 +84,21 @@ holomesh_result holomesh_serialize(const holomesh* sourceMesh, holomesh* destMes
 
     // Copy the third tier structures into the mesh
     for (uint32_t i = 0; i < destMesh->hulls.size; ++i) {
-        holomesh_hull* dst = destMesh->hulls.ptr + i;
-        const holomesh_hull* src = sourceMesh->hulls.ptr + i;
+        holomesh_hull_t* dst = destMesh->hulls.ptr + i;
+        const holomesh_hull_t* src = sourceMesh->hulls.ptr + i;
         HOLOMESH_SET_AND_COPY_ARRAY(dst->vertices, ptr, src->vertices);
         HOLOMESH_SET_AND_COPY_ARRAY(dst->uvs, ptr, src->uvs);
         HOLOMESH_SET_AND_COPY_ARRAY(dst->edges, ptr, src->edges);
         HOLOMESH_SET_AND_COPY_ARRAY(dst->faces, ptr, src->faces);
     }
     for (uint32_t i = 0; i < destMesh->textures.size; ++i) {
-        holomesh_texture* dst = destMesh->textures.ptr + i;
-        const holomesh_texture* src = sourceMesh->textures.ptr + i;
+        holomesh_texture_t* dst = destMesh->textures.ptr + i;
+        const holomesh_texture_t* src = sourceMesh->textures.ptr + i;
         HOLOMESH_SET_AND_COPY_ARRAY(dst->data, ptr, src->data);
     }
     for (uint32_t i = 0; i < destMesh->string_table.size; ++i) {
-        holomesh_string* dst = destMesh->string_table.ptr + i;
-        const holomesh_string* src = sourceMesh->string_table.ptr + i;
+        holomesh_string_t* dst = destMesh->string_table.ptr + i;
+        const holomesh_string_t* src = sourceMesh->string_table.ptr + i;
         HOLOMESH_SET_AND_COPY_ARRAY(dst->str, ptr, src->str);
     }
 
@@ -130,23 +130,23 @@ holomesh_result holomesh_serialize(const holomesh* sourceMesh, holomesh* destMes
     return hmresult_ok;
 }
 
-void holomesh_set_vec2(holomesh_vec2* vec, uint32_t u, uint32_t v) {
-    vec->u = u;
-    vec->v = v;
+void holomesh_set_vec2(holomesh_vec2_t* vec, uint32_t u, uint32_t v) {
+    vec->x = u;
+    vec->y = v;
 }
 
-void holomesh_set_vec3(holomesh_vec3* vec, uint32_t x, uint32_t y, uint32_t z) {
+void holomesh_set_vec3(holomesh_vec3_t* vec, uint32_t x, uint32_t y, uint32_t z) {
     vec->x = x;
     vec->y = y;
     vec->z = z;
 }
 
-void holomesh_set_edge(holomesh_edge* e, uint8_t a, uint8_t b) {
+void holomesh_set_edge(holomesh_edge_t* e, uint8_t a, uint8_t b) {
     e->a = a;
     e->b = b;
 }
 
-void holomesh_set_face(holomesh_face* f, uint8_t pa, uint8_t pb, uint8_t pc, uint8_t ta, uint8_t tb, uint8_t tc, uint8_t texture) {
+void holomesh_set_face(holomesh_face_t* f, uint8_t pa, uint8_t pb, uint8_t pc, uint8_t ta, uint8_t tb, uint8_t tc, uint8_t texture) {
     f->positions.a = pa;
     f->positions.b = pb;
     f->positions.c = pc;
@@ -156,7 +156,7 @@ void holomesh_set_face(holomesh_face* f, uint8_t pa, uint8_t pb, uint8_t pc, uin
     f->texture = texture;
 }
 
-void holomesh_set_string(holomesh_string* out, char* str) {
+void holomesh_set_string(holomesh_string_t* out, char* str) {
     if (str == NULL) {
         out->str.ptr = NULL;
         out->str.size = 0;
@@ -231,7 +231,7 @@ holomesh_result holomesh_unpack_texture(uint8_t* dst, uint32_t dstSize, const ui
     return hmresult_ok;
 }
 
-void holomesh_set_texture(holomesh_texture* texture, uint8_t* data, uint32_t dataSize, uint16_t width, uint16_t height) {
+void holomesh_set_texture(holomesh_texture_t* texture, uint8_t* data, uint32_t dataSize, uint16_t width, uint16_t height) {
     texture->height = height;
     texture->width = width;
     texture->scale_u = fix16_from_int(texture->width - 1);
@@ -241,28 +241,28 @@ void holomesh_set_texture(holomesh_texture* texture, uint8_t* data, uint32_t dat
     texture->data.size = dataSize;
 }
 
-void holomesh_set_info_point(holomesh_info_point* info, uint16_t nameIndex, const holomesh_vec3* point) {
+void holomesh_set_info_point(holomesh_info_point_t* info, uint16_t nameIndex, const holomesh_vec3_t* point) {
     info->name_string = nameIndex;
     info->point = *point;
 }
 
-void holomesh_set_transform(holomesh_transform* t, const uint32_t m[16]) {
+void holomesh_set_transform(holomesh_transform_t* t, const uint32_t m[16]) {
     memcpy(t->m, m, sizeof(uint32_t) * 16);
 }
 
 void holomesh_set_hull(
-    holomesh_hull* hull,
-    holomesh_vec3* vertices, uint32_t numVertices,
-    holomesh_vec2* uvs, uint32_t numUVs,
-    holomesh_edge* edges, uint32_t numEdges,
-    holomesh_face* faces, uint32_t numFaces) {
+    holomesh_hull_t* hull,
+    holomesh_vec3_t* vertices, uint32_t numVertices,
+    holomesh_vec2_t* uvs, uint32_t numUVs,
+    holomesh_edge_t* edges, uint32_t numEdges,
+    holomesh_face_t* faces, uint32_t numFaces) {
     hull->vertices.ptr = vertices; hull->vertices.size = numVertices;
     hull->uvs.ptr = uvs; hull->uvs.size = numUVs;
     hull->edges.ptr = edges; hull->edges.size = numEdges;
     hull->faces.ptr = faces; hull->faces.size = numFaces;
 }
 
-void holomesh_set_hulls(holomesh* mesh, holomesh_hull* hulls, uint32_t numHulls) {
+void holomesh_set_hulls(holomesh* mesh, holomesh_hull_t* hulls, uint32_t numHulls) {
     if (hulls == NULL) {
         mesh->hulls.ptr = NULL;
         mesh->hulls.size = 0;
@@ -272,7 +272,7 @@ void holomesh_set_hulls(holomesh* mesh, holomesh_hull* hulls, uint32_t numHulls)
     }
 }
 
-void holomesh_set_info_points(holomesh* mesh, holomesh_info_point* points, uint32_t numPoints) {
+void holomesh_set_info_points(holomesh* mesh, holomesh_info_point_t* points, uint32_t numPoints) {
     if (points == NULL) {
         mesh->info_points.ptr = NULL;
         mesh->info_points.size = 0;
@@ -294,7 +294,7 @@ void holomesh_set_info_stats(holomesh* mesh, uint16_t* stats, uint32_t numStats)
     }
 }
 
-void holomesh_set_textures(holomesh* mesh, holomesh_texture* textures, uint32_t numTextures) {
+void holomesh_set_textures(holomesh* mesh, holomesh_texture_t* textures, uint32_t numTextures) {
     if (textures == NULL) {
         mesh->textures.ptr = NULL;
         mesh->textures.size = 0;
@@ -305,7 +305,7 @@ void holomesh_set_textures(holomesh* mesh, holomesh_texture* textures, uint32_t 
     }
 }
 
-void holomesh_set_strings(holomesh* mesh, holomesh_string* strings, uint32_t numStrings) {
+void holomesh_set_strings(holomesh* mesh, holomesh_string_t* strings, uint32_t numStrings) {
     if (strings == NULL) {
         mesh->string_table.ptr = NULL;
         mesh->string_table.size = 0;

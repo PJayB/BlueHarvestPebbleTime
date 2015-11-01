@@ -64,7 +64,7 @@ AppTimer* g_timer;
 
 // Rendering stuff
 holomesh* g_holomesh;
-vec3* g_scratch;
+vec3_t* g_scratch;
 
 void load_holomesh(void) {
     ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_CORELLIAN_TRANSPORT);
@@ -85,7 +85,7 @@ void load_holomesh(void) {
     
     // Allocate scratch
     size_t scratch_size = g_holomesh->scratch_size;
-    g_scratch = (vec3*) malloc(scratch_size);
+    g_scratch = (vec3_t*) malloc(scratch_size);
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "HOLOMESH: %u bytes, %u scratch size", 
             (unsigned) size,
@@ -146,27 +146,27 @@ void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
 void transform_mesh(void) {
     fix16_t halfViewportSize = fix16_from_int(144 / 2);
     
-    // Get the projection matrix
-    const matrix* proj = (const matrix*) &g_holomesh->transforms[holomesh_transform_perspective_square_aspect];
+    // Get the projection matrix_t
+    const matrix_t* proj = (const matrix_t*) &g_holomesh->transforms[holomesh_transform_perspective_square_aspect];
     
-    // Create a rotation matrix
+    // Create a rotation matrix_t
     static fix16_t angle = 0;
-    matrix rotation;
+    matrix_t rotation;
     matrix_create_rotation_z(&rotation, angle);
     angle += (fix16_one >> 4);
     
     // Create the final transform
-    matrix transform;
+    matrix_t transform;
     matrix_multiply(&transform, &rotation, proj);
     
-    vec3* out_v = g_scratch; 
+    vec3_t* out_v = g_scratch; 
     
     for (size_t hull_index = 0; hull_index < g_holomesh->hulls.size; ++hull_index) {
         holomesh_hull* hull = &g_holomesh->hulls.ptr[hull_index];
         
         // Transform all the points
         for (size_t i = 0; i < hull->vertices.size; ++i, ++out_v) {
-            vec3 v;
+            vec3_t v;
             v.x = hull->vertices.ptr[i].x;
             v.y = hull->vertices.ptr[i].y;
             v.z = hull->vertices.ptr[i].z;
@@ -189,7 +189,7 @@ void update_display(Layer* layer, GContext* ctx) {
     // Transform the mesh
     transform_mesh();
         
-    vec3* scratch_vertices = g_scratch; 
+    vec3_t* scratch_vertices = g_scratch; 
     
     for (size_t hull_index = 0; hull_index < g_holomesh->hulls.size; ++hull_index) {
         holomesh_hull* hull = &g_holomesh->hulls.ptr[hull_index];
@@ -198,7 +198,7 @@ void update_display(Layer* layer, GContext* ctx) {
         wireframe_context wfctx;
         wfctx.edge_indices = (const uint8_t*) hull->edges.ptr;
         wfctx.num_edges = hull->edges.size;
-        wfctx.points = (vec3*) scratch_vertices;
+        wfctx.points = (vec3_t*) scratch_vertices;
         wfctx.user_ptr = ctx;
         wireframe_draw(&wfctx);
         

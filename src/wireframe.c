@@ -12,8 +12,8 @@ void wireframe_draw(wireframe_context* ctx) {
     const uint8_t* edge = ctx->edge_indices;
     for (size_t i = 0; i < ctx->num_edges; ++i, edge += 2)
     {
-        vec3 a = ctx->points[edge[0]];
-        vec3 b = ctx->points[edge[1]];
+        vec3_t a = ctx->points[edge[0]];
+        vec3_t b = ctx->points[edge[1]];
         
         wireframe_draw_line(
             ctx->user_ptr, 

@@ -12,9 +12,8 @@ extern "C" {
 #   pragma warning(disable: 4214)
 #endif
 
-typedef struct _holomesh_face face_t;
-typedef struct _holomesh_texture texture_t;
-
+typedef struct holomesh_texture_s holomesh_texture_t;
+    
 typedef enum _rasterizer_clip_plane_e {
     rasterizer_clip_left = 1,
     rasterizer_clip_right = 2,
@@ -79,10 +78,10 @@ typedef struct _rasterizer_context {
     void* user_ptr;
 } rasterizer_context;
 
-size_t rasterizer_create_face_kickoffs(rasterizer_face_kickoff* kickoffs, size_t max_kickoffs, const viewport_t* viewport, uint32_t hull_index, const vec3* points, const face_t* faces, size_t num_faces);
+size_t rasterizer_create_face_kickoffs(rasterizer_face_kickoff* kickoffs, size_t max_kickoffs, const viewport_t* viewport, uint32_t hull_index, const vec3_t* points, const face_t* faces, size_t num_faces);
 void rasterizer_sort_face_kickoffs(rasterizer_face_kickoff* faces, size_t num_faces);
 
-void rasterizer_draw_span(rasterizer_context* ctx, const texture_t* texture, int16_t ia, int16_t ib, int16_t iy, fix16_t az, fix16_t bz, fix16_t ua, fix16_t ub, fix16_t va, fix16_t vb);
+void rasterizer_draw_span(rasterizer_context* ctx, const holomesh_texture_t* texture, int16_t ia, int16_t ib, int16_t iy, fix16_t az, fix16_t bz, fix16_t ua, fix16_t ub, fix16_t va, fix16_t vb);
 void rasterizer_advance_stepping_edge(rasterizer_stepping_edge* e, fix16_t y0, fix16_t y);
 
 void rasterizer_init_span_pool(void);
