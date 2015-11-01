@@ -185,35 +185,23 @@ rasterizer_stepping_span* rasterizer_create_stepping_span(rasterizer_stepping_sp
     return span;
 }
 
-/*
-void rasterizer_create_spans_for_triangle(
-    const viewport_t* viewport,
-    const texture_t* texture,
-    const vec3_t* a, const vec2_t* uva,
-    const vec3_t* b, const vec2_t* uvb,
-    const vec3_t* c, const vec2_t* uvc,
-    int16_t start_y) {
+rasterizer_stepping_span* rasterizer_create_spans_for_triangle(rasterizer_stepping_span* span_list, const texture_t* texture, const vec3_t* a, const vec2_t* uva, const vec3_t* b, const vec2_t* uvb, const vec3_t* c, const vec2_t* uvc, int16_t start_y) {
+
     // Must be within bounds
-    ASSERT(a.x.value >= 0);
-    ASSERT(a.y.value >= 0);
-    ASSERT(b.x.value >= 0);
-    ASSERT(b.y.value >= 0);
-    ASSERT(c.x.value >= 0);
-    ASSERT(c.y.value >= 0);
-    ASSERT(a.x.value <= viewport->fwidth);
-    ASSERT(a.y.value <= viewport->fheight);
-    ASSERT(b.x.value <= viewport->fwidth);
-    ASSERT(b.y.value <= viewport->fheight);
-    ASSERT(c.x.value <= viewport->fwidth);
-    ASSERT(c.y.value <= viewport->fheight);
+    ASSERT(a->x >= 0);
+    ASSERT(a->y >= 0);
+    ASSERT(b->x >= 0);
+    ASSERT(b->y >= 0);
+    ASSERT(c->x >= 0);
+    ASSERT(c->y >= 0);
 
     // Each point's xy coordinate should have been floored
-    ASSERT((a.x.value & 0xFFFF) == 0);
-    ASSERT((a.y.value & 0xFFFF) == 0);
-    ASSERT((b.x.value & 0xFFFF) == 0);
-    ASSERT((b.y.value & 0xFFFF) == 0);
-    ASSERT((c.x.value & 0xFFFF) == 0);
-    ASSERT((c.y.value & 0xFFFF) == 0);
+    ASSERT((a->x & 0xFFFF) == 0);
+    ASSERT((a->y & 0xFFFF) == 0);
+    ASSERT((b->x & 0xFFFF) == 0);
+    ASSERT((b->y & 0xFFFF) == 0);
+    ASSERT((c->x & 0xFFFF) == 0);
+    ASSERT((c->y & 0xFFFF) == 0);
 
     rasterizer_stepping_edge edges[3];
     rasterizer_stepping_edge_y edgeYs[3];
@@ -234,7 +222,7 @@ void rasterizer_create_spans_for_triangle(
     }
 
     if (max_length == 0)
-        return;
+        return span_list;
 
     rasterizer_stepping_edge* e0 = &edges[longest_edge_index];
     rasterizer_stepping_edge* e1 = &edges[(longest_edge_index + 1) % 3];
@@ -247,15 +235,18 @@ void rasterizer_create_spans_for_triangle(
     // Draw the spans
     if (ey1->d)
     {
-        CreateSteppingSpan(e0, ey0, e1, ey1, viewport->fheight, texture, start_y);
+        span_list = rasterizer_create_stepping_span(span_list, texture, e0, ey0, e1, ey1, start_y);
     }
 
     if (ey2->d)
     {
-        CreateSteppingSpan(e0, ey0, e2, ey2, viewport->fheight, texture, start_y);
+        span_list = rasterizer_create_stepping_span(span_list, texture, e0, ey0, e2, ey2, start_y);
     }
+
+    return span_list;
 }
 
+/*
 void rasterizer_create_face_spans(const viewport_t* viewport, const face_t* face, const vec3_t* points, const vec2_t* texcoords, const texture_t* texture, uint16_t y, uint8_t needs_clip) {
     vec2_t uva = texcoords[face->uvs.a];
     vec2_t uvb = texcoords[face->uvs.b];
