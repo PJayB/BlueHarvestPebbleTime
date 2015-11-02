@@ -6,8 +6,10 @@ void matrix_create_rotation_z(matrix_t* M, fix16_t angle) {
     fix16_t sa = sin_lookup(angle & 0xFFFF);
     fix16_t ca = cos_lookup(angle & 0xFFFF);
 #else
-    fix16_t sa = fix16_sin(angle);
-    fix16_t ca = fix16_cos(angle);
+    // Approximate pebble behavior (angle [0,1] is interpreted as [0, 2pi])
+    fix16_t angle_r = fix16_mul(fix16_pi, fix16_mul(angle, 1 << 17));
+    fix16_t sa = fix16_sin(angle_r);
+    fix16_t ca = fix16_cos(angle_r);
 #endif
 
     M->m[0][0] = ca;
