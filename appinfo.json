@@ -20,12 +20,12 @@
             },
             {
                 "file": "data/cortn.holo",
-                "name": "HOLO_CORELLIAN_TRANSPORT",
+                "name": "HOLO_CORTN",
                 "type": "raw"
             },
             {
                 "file": "data/isd.holo",
-                "name": "HOLO_IMPERIAL_STAR_DESTROYER",
+                "name": "HOLO_ISD",
                 "type": "raw"
             },
             {
