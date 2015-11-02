@@ -112,7 +112,7 @@ void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh
         if (!active_span_list)
             return; // end of mesh (we know all meshes are contiguous)
 
-                    // Clear the depth values for this scanline
+        // Clear the depth values for this scanline
         memset(g_depths, 0, sizeof(g_depths));
 
         active_span_list = rasterizer_draw_active_spans(

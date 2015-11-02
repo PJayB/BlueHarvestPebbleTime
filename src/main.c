@@ -71,7 +71,7 @@ holomesh_t* g_holomesh;
 //#define WIREFRAME
 
 void load_holomesh(void) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_TIEFTR);
+    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_AWING);
     
     // Allocate space for the resource
     // TODO: estimate this better
@@ -142,8 +142,9 @@ void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, uint8_t color) 
     if (x >= row_info->min_x && x <= row_info->max_x) {
         int byte_offset = x >> 2; // divide by 4 to get actual pixel byte
         int bit_shift = (~x & 3) << 1;
-        // TODO: remove & 3 here -- technically this is out of range and insane data
-        row_info->data[byte_offset] |= (color & 3) << bit_shift;
+        uint8_t mask = 3 << bit_shift;
+        uint8_t src = row_info->data[byte_offset] & ~mask;
+        row_info->data[byte_offset] = src | (color << bit_shift);
     }
 }
 //Hippo command
