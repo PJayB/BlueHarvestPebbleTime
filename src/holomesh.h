@@ -13,7 +13,7 @@ extern "C" {
 
     ---------------------------------*/
 #define HOLOMESH_MAGIC 0x484f4c4fu // 'HOLO'
-#define HOLOMESH_VERSION 4
+#define HOLOMESH_VERSION 5
 
 #define HOLOMESH_ARRAY_PTR(type) union { type* ptr; int32_t offset; }
 #define HOLOMESH_ARRAY(type) struct { HOLOMESH_ARRAY_PTR(type); uint32_t size; }
@@ -64,10 +64,14 @@ extern "C" {
         uint16_t height;
     } holomesh_texture_t;
 
-    typedef struct holomesh_info_point_s {
-        holomesh_vec3_t point;
+    typedef struct holomesh_tag_s {
         uint16_t name_string;
-    } holomesh_info_point_t;
+        uint16_t tag_group_index;
+    } holomesh_tag_t;
+
+    typedef struct holomesh_tag_group_s {
+        HOLOMESH_ARRAY(holomesh_vec3_t) points;
+    } holomesh_tag_group_t;
 
     typedef struct holomesh_craft_info_s {
         uint16_t craft_name_string;
@@ -82,8 +86,8 @@ extern "C" {
         holomesh_craft_info_t info;
         holomesh_transform_t transforms[holomesh_transform_count];
         HOLOMESH_ARRAY(holomesh_hull_t) hulls;
-        HOLOMESH_ARRAY(holomesh_info_point_t) info_points;
-        HOLOMESH_ARRAY(uint16_t) info_stats;
+        HOLOMESH_ARRAY(holomesh_tag_t) tags;
+        HOLOMESH_ARRAY(holomesh_tag_group_t) tag_groups;
         HOLOMESH_ARRAY(holomesh_texture_t) textures;
         HOLOMESH_ARRAY(holomesh_string_t) string_table;
     } holomesh;
@@ -110,7 +114,7 @@ extern "C" {
     void holomesh_set_face(holomesh_face_t* f, uint8_t pa, uint8_t pb, uint8_t pc, uint8_t ta, uint8_t tb, uint8_t tc, uint8_t texture);
     void holomesh_set_string(holomesh_string_t* out, char* str);
     void holomesh_set_texture(holomesh_texture_t* texture, uint8_t* data, uint32_t dataSize, uint16_t width, uint16_t height);
-    void holomesh_set_info_point(holomesh_info_point_t* info, uint16_t nameIndex, const holomesh_vec3_t* point);
+    void holomesh_set_tag_group(holomesh_tag_group_t* tagGroup, holomesh_vec3_t* points, uint32_t numPoints);
     void holomesh_set_transform(holomesh_transform_t* t, const uint32_t m[16]);
 
     // Lifetime of these arrays must persist over lifetime of hull
@@ -122,8 +126,8 @@ extern "C" {
         holomesh_face_t* faces, uint32_t numFaces);
 
     void holomesh_set_hulls(holomesh* mesh, holomesh_hull_t* hulls, uint32_t numHulls);
-    void holomesh_set_info_points(holomesh* mesh, holomesh_info_point_t* points, uint32_t numPoints);
-    void holomesh_set_info_stats(holomesh* mesh, uint16_t* stats, uint32_t numStats);
+    void holomesh_set_tags(holomesh* mesh, holomesh_tag_t* tags, uint32_t numTags);
+    void holomesh_set_tag_groups(holomesh* mesh, holomesh_tag_group_t* groups, uint32_t numGroups);
     void holomesh_set_textures(holomesh* mesh, holomesh_texture_t* textures, uint32_t numTextures);
     void holomesh_set_strings(holomesh* mesh, holomesh_string_t* strings, uint32_t numStrings);
 

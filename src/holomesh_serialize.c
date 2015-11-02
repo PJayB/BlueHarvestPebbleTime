@@ -28,8 +28,8 @@ uint32_t holomesh_get_size(const holomesh* sourceMesh, int include_scratch) {
 
     // Get second tier sizes
     size += HOLOMESH_ARRAY_SIZE(sourceMesh->hulls);
-    size += HOLOMESH_ARRAY_SIZE(sourceMesh->info_points);
-    size += HOLOMESH_ARRAY_SIZE(sourceMesh->info_stats);
+    size += HOLOMESH_ARRAY_SIZE(sourceMesh->tags);
+    size += HOLOMESH_ARRAY_SIZE(sourceMesh->tag_groups);
     size += HOLOMESH_ARRAY_SIZE(sourceMesh->textures);
     size += HOLOMESH_ARRAY_SIZE(sourceMesh->string_table);
 
@@ -45,6 +45,9 @@ uint32_t holomesh_get_size(const holomesh* sourceMesh, int include_scratch) {
     }
     for (uint32_t i = 0; i < sourceMesh->string_table.size; ++i) {
         size += HOLOMESH_ARRAY_SIZE(sourceMesh->string_table.ptr[i].str);
+    }
+    for (uint32_t i = 0; i < sourceMesh->tag_groups.size; ++i) {
+        size += HOLOMESH_ARRAY_SIZE(sourceMesh->tag_groups.ptr[i].points);
     }
 
     if (include_scratch) {
@@ -77,8 +80,8 @@ holomesh_result holomesh_serialize(const holomesh* sourceMesh, holomesh* destMes
 
     // Copy the second tier structures into the mesh
     HOLOMESH_SET_AND_COPY_ARRAY(destMesh->hulls, ptr, sourceMesh->hulls);
-    HOLOMESH_SET_AND_COPY_ARRAY(destMesh->info_points, ptr, sourceMesh->info_points);
-    HOLOMESH_SET_AND_COPY_ARRAY(destMesh->info_stats, ptr, sourceMesh->info_stats);
+    HOLOMESH_SET_AND_COPY_ARRAY(destMesh->tags, ptr, sourceMesh->tags);
+    HOLOMESH_SET_AND_COPY_ARRAY(destMesh->tag_groups, ptr, sourceMesh->tag_groups);
     HOLOMESH_SET_AND_COPY_ARRAY(destMesh->textures, ptr, sourceMesh->textures);
     HOLOMESH_SET_AND_COPY_ARRAY(destMesh->string_table, ptr, sourceMesh->string_table);
 
@@ -101,6 +104,11 @@ holomesh_result holomesh_serialize(const holomesh* sourceMesh, holomesh* destMes
         const holomesh_string_t* src = sourceMesh->string_table.ptr + i;
         HOLOMESH_SET_AND_COPY_ARRAY(dst->str, ptr, src->str);
     }
+    for (uint32_t i = 0; i < destMesh->tag_groups.size; ++i) {
+        holomesh_tag_group_t* dst = destMesh->tag_groups.ptr + i;
+        const holomesh_tag_group_t* src = sourceMesh->tag_groups.ptr + i;
+        HOLOMESH_SET_AND_COPY_ARRAY(dst->points, ptr, src->points);
+    }
 
     ASSERT(ptr == end);
 
@@ -120,10 +128,13 @@ holomesh_result holomesh_serialize(const holomesh* sourceMesh, holomesh* destMes
     for (uint32_t i = 0; i < destMesh->string_table.size; ++i) {
         HOLOMESH_OFFSET_ARRAY(destMesh->string_table.ptr[i].str, offset);
     }
+    for (uint32_t i = 0; i < destMesh->tag_groups.size; ++i) {
+        HOLOMESH_OFFSET_ARRAY(destMesh->tag_groups.ptr[i].points, offset);
+    }
 
     HOLOMESH_OFFSET_ARRAY(destMesh->hulls, offset);
-    HOLOMESH_OFFSET_ARRAY(destMesh->info_points, offset);
-    HOLOMESH_OFFSET_ARRAY(destMesh->info_stats, offset);
+    HOLOMESH_OFFSET_ARRAY(destMesh->tags, offset);
+    HOLOMESH_OFFSET_ARRAY(destMesh->tag_groups, offset);
     HOLOMESH_OFFSET_ARRAY(destMesh->textures, offset);
     HOLOMESH_OFFSET_ARRAY(destMesh->string_table, offset);
 
@@ -241,9 +252,15 @@ void holomesh_set_texture(holomesh_texture_t* texture, uint8_t* data, uint32_t d
     texture->data.size = dataSize;
 }
 
-void holomesh_set_info_point(holomesh_info_point_t* info, uint16_t nameIndex, const holomesh_vec3_t* point) {
-    info->name_string = nameIndex;
-    info->point = *point;
+void holomesh_set_tag_group(holomesh_tag_group_t* tagGroup, holomesh_vec3_t* points, uint32_t numPoints) {
+    if (points == NULL) {
+        tagGroup->points.ptr = NULL;
+        tagGroup->points.size = 0;
+    }
+    else {
+        tagGroup->points.ptr = points;
+        tagGroup->points.size = numPoints;
+    }
 }
 
 void holomesh_set_transform(holomesh_transform_t* t, const uint32_t m[16]) {
@@ -272,25 +289,25 @@ void holomesh_set_hulls(holomesh* mesh, holomesh_hull_t* hulls, uint32_t numHull
     }
 }
 
-void holomesh_set_info_points(holomesh* mesh, holomesh_info_point_t* points, uint32_t numPoints) {
-    if (points == NULL) {
-        mesh->info_points.ptr = NULL;
-        mesh->info_points.size = 0;
+void holomesh_set_tags(holomesh* mesh, holomesh_tag_t* tags, uint32_t numTags) {
+    if (tags == NULL) {
+        mesh->tags.ptr = NULL;
+        mesh->tags.size = 0;
     }
     else {
-        mesh->info_points.ptr = points;
-        mesh->info_points.size = numPoints;
+        mesh->tags.ptr = tags;
+        mesh->tags.size = numTags;
     }
 }
 
-void holomesh_set_info_stats(holomesh* mesh, uint16_t* stats, uint32_t numStats) {
-    if (stats == NULL) {
-        mesh->info_stats.ptr = NULL;
-        mesh->info_stats.size = 0;
+void holomesh_set_tag_groups(holomesh* mesh, holomesh_tag_group_t* tagGroups, uint32_t numTagGroups) {
+    if (tagGroups == NULL) {
+        mesh->tag_groups.ptr = NULL;
+        mesh->tag_groups.size = 0;
     }
     else {
-        mesh->info_stats.ptr = stats;
-        mesh->info_stats.size = numStats;
+        mesh->tag_groups.ptr = tagGroups;
+        mesh->tag_groups.size = numTagGroups;
     }
 }
 
