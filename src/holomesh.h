@@ -30,6 +30,7 @@ extern "C" {
     } holomesh_transform_index_t;
 
     typedef enum holomesh_craft_affiliation_e {
+        holomesh_craft_affiliation_not_set,
         holomesh_craft_affiliation_neutral,
         holomesh_craft_affiliation_rebel,
         holomesh_craft_affiliation_imperial,
