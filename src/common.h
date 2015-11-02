@@ -5,7 +5,7 @@
 // TODO: don't define this for the shipping version!
 #   define RASTERIZER_CHECKS
 #   ifdef RASTERIZER_CHECKS
-#       define ASSERT(x) if (x) {} else { APP_LOG(APP_LOG_LEVEL_ERROR, "ASSERT: " __FILE__ "(%d): " #x, __LINE__); }
+#       define ASSERT(x) if (x) {} else { assert(__FILE__, __LINE__, #x); }
 #   else
 #       define ASSERT(x) 
 #   endif
@@ -26,6 +26,10 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifdef PEBBLE
+void assert(const char* file, int line, const char* condition);
 #endif
 
 typedef struct matrix_s {
