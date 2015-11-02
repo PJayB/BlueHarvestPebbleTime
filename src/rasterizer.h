@@ -37,8 +37,8 @@ extern void rasterizer_set_pixel(
     uint8_t color);
 
 typedef struct _rasterizer_face_kickoff {
-    uint16_t y : 12;
-    uint16_t clip : 4;
+    uint8_t y;
+    uint8_t clip;
     uint8_t hull_index;
     uint8_t face_index;
 

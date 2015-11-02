@@ -345,10 +345,11 @@ size_t rasterizer_create_face_kickoffs(rasterizer_face_kickoff* kickoffs, size_t
         if (max_y > viewport->fheight) clip |= rasterizer_clip_bottom;
 
         int16_t kickoff_y = fix16_to_int_floor(min_y);
+        ASSERT(kickoff_y < 256);
 
         current_kickoff->hull_index = (uint8_t) hull_index;
         current_kickoff->face_index = (uint8_t) i;
-        current_kickoff->y = kickoff_y < 0 ? 0 : kickoff_y;
+        current_kickoff->y = kickoff_y < 0 ? 0 : (uint8_t) kickoff_y;
         current_kickoff->clip = clip;
 #ifdef SANDBOX
         current_kickoff->min_x = min_x;
