@@ -9,6 +9,11 @@
     "resources": {
         "media": [
             {
+                "file": "data/assault.holo",
+                "name": "HOLO_ASSAULT",
+                "type": "raw"
+            },
+            {
                 "file": "data/awing.holo",
                 "name": "HOLO_AWING",
                 "type": "raw"

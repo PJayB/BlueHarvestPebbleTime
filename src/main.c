@@ -45,7 +45,7 @@ matrix_t g_lastTransform;
 size_t g_current_stat = 0;
 
 void load_holomesh(void) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_CORTN);
+    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_ISD);
     
     // Allocate space for the resource
     // TODO: estimate this better
@@ -132,41 +132,14 @@ void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
 }
 
 void update_display(Layer* layer, GContext* ctx) {
-    graphics_context_set_antialiased(ctx, true);
+
+    graphics_context_set_antialiased(ctx, false);
     graphics_context_set_stroke_color(ctx, GColorYellow);
     graphics_context_set_stroke_width(ctx, 1);
 
+    // --- Draw an underline ---
+
     GRect info_bounds = layer_get_frame(text_layer_get_layer(infoTextLayer));
-
-    GPoint start = info_bounds.origin;
-    start.x = 10;
-    start.y += info_bounds.size.h + 2;
-
-    GPoint mid1 = start;
-    mid1.y += 5;
-
-    viewport_t viewport;
-    viewport_init(&viewport, 144, 144);
-
-    fix16_t hw = viewport.fwidth >> 1;
-    fix16_t hh = viewport.fheight >> 1;
-
-    // Transform an info point
-    const holomesh_tag_t* tag = &g_holomesh->tags.ptr[
-        (g_current_stat++) % g_holomesh->tags.size
-    ];
-
-    const holomesh_tag_group_t* tag_group = &g_holomesh->tag_groups.ptr[tag->tag_group_index];
-
-    vec3_t p = tag_group->points.ptr[0];
-    vec3_t tp;
-    render_transform_point(&tp, &p, &g_lastTransform, hw, hh);
-
-    GPoint end = GPoint(
-        fix16_to_int_floor(tp.x),
-        fix16_to_int_floor(tp.y));
-
-    GPoint mid2 = GPoint(end.x, mid1.y);
 
     GPoint underscore0 = info_bounds.origin;
     underscore0.y += info_bounds.size.h + 1;
@@ -177,6 +150,42 @@ void update_display(Layer* layer, GContext* ctx) {
 
     graphics_draw_line(ctx, underscore0, underscore1);
     graphics_draw_line(ctx, underscore1, quiff);
+
+    // --- Draw tag lines (if applicable) ---
+
+    const holomesh_tag_t* tag = &g_holomesh->tags.ptr[
+        g_current_stat % g_holomesh->tags.size
+    ];
+
+    if (tag->tag_group_index == 0xFFFF)
+        return;
+
+    viewport_t viewport;
+    viewport_init(&viewport, 144, 144);
+
+    fix16_t hw = viewport.fwidth >> 1;
+    fix16_t hh = viewport.fheight >> 1;
+
+    // Transform an info point
+    const holomesh_tag_group_t* tag_group = &g_holomesh->tag_groups.ptr[tag->tag_group_index];
+
+    const vec3_t p = tag_group->points.ptr[0];
+    vec3_t tp;
+    render_transform_point(&tp, &p, &g_lastTransform, hw, hh);
+
+    GPoint start = info_bounds.origin;
+    start.x = 10;
+    start.y += info_bounds.size.h + 2;
+
+    GPoint end = GPoint(
+        fix16_to_int_floor(tp.x),
+        fix16_to_int_floor(tp.y));
+
+    GPoint mid1 = start;
+    mid1.y += 5;
+
+    GPoint mid2 = GPoint(end.x, mid1.y);
+
     graphics_draw_line(ctx, start, mid1);
     graphics_draw_line(ctx, mid1, mid2);
     graphics_draw_line(ctx, mid2, end);
@@ -251,7 +260,7 @@ void animation_timer_trigger(void* data) {
 
 void set_new_stat_text(void) {
     const holomesh_tag_t* tag = &g_holomesh->tags.ptr[
-        (g_current_stat++) % g_holomesh->tags.size
+        (++g_current_stat) % g_holomesh->tags.size
     ];
 
     const char* stat = g_holomesh->string_table.ptr[tag->name_string].str.ptr;
