@@ -69,7 +69,7 @@ void render_draw_mesh_wireframe(void* user_ptr, const viewport_t* viewport, cons
     }
 }
 
-#define MAX_HULLS 16
+#define MAX_HULLS 42
 #define MAX_KICKOFFS 250
 
 static fix16_t g_depths[MAX_VIEWPORT_X];
