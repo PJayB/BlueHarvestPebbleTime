@@ -247,37 +247,38 @@ rasterizer_stepping_span* rasterizer_create_spans_for_triangle(rasterizer_steppi
 }
 
 rasterizer_stepping_span* rasterizer_create_face_spans(rasterizer_stepping_span* span_list, const viewport_t* viewport, const face_t* face, const vec3_t* points, const vec2_t* texcoords, const texture_t* texture, uint16_t y, uint8_t needs_clip) {
-    vec2_t uva = texcoords[face->uvs.a];
-    vec2_t uvb = texcoords[face->uvs.b];
-    vec2_t uvc = texcoords[face->uvs.c];
-    vec3_t a = points[face->positions.a];
-    vec3_t b = points[face->positions.b];
-    vec3_t c = points[face->positions.c];
+    const vec2_t* c_uva = &texcoords[face->uvs.a];
+    const vec2_t* c_uvb = &texcoords[face->uvs.b];
+    const vec2_t* c_uvc = &texcoords[face->uvs.c];
+    const vec3_t* c_a = &points[face->positions.a];
+    const vec3_t* c_b = &points[face->positions.b];
+    const vec3_t* c_c = &points[face->positions.c];
 
     // Do perspective correction on the UVs
-    uva.x = fix16_mul(uva.x, a.z);
-    uva.y = fix16_mul(uva.y, a.z);
-    uvb.x = fix16_mul(uvb.x, b.z);
-    uvb.y = fix16_mul(uvb.y, b.z);
-    uvc.x = fix16_mul(uvc.x, c.z);
-    uvc.y = fix16_mul(uvc.y, c.z);
+    vec2_t uva, uvb, uvc;
+    uva.x = fix16_mul(c_uva->x, c_a->z);
+    uva.y = fix16_mul(c_uva->y, c_a->z);
+    uvb.x = fix16_mul(c_uvb->x, c_b->z);
+    uvb.y = fix16_mul(c_uvb->y, c_b->z);
+    uvc.x = fix16_mul(c_uvc->x, c_c->z);
+    uvc.y = fix16_mul(c_uvc->y, c_c->z);
 
     if (needs_clip != 0) {
         span_list = rasterizer_clip_spans_for_triangle(
             span_list,
             viewport,
             texture,
-            &a, &uva,
-            &b, &uvb,
-            &c, &uvc,
+            c_a, &uva,
+            c_b, &uvb,
+            c_c, &uvc,
             y);
     } else {
         span_list = rasterizer_create_spans_for_triangle(
             span_list,
             texture,
-            &a, &uva,
-            &b, &uvb,
-            &c, &uvc,
+            c_a, &uva,
+            c_b, &uvb,
+            c_c, &uvc,
             y);
     }
 
