@@ -70,17 +70,18 @@ void render_draw_mesh_wireframe(void* user_ptr, const viewport_t* viewport, cons
 }
 
 #define MAX_HULLS 16
-#define MAX_KICKOFFS 256
+#define MAX_KICKOFFS 250
+
+static fix16_t g_depths[MAX_VIEWPORT_X];
 
 void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const rasterizer_face_kickoff* face_kickoffs, size_t num_kickoffs, const vec3_t** hull_transformed_vertices) {
     // Set up the rasterizer
     ASSERT(viewport->width <= MAX_VIEWPORT_X);
-    fix16_t depths[MAX_VIEWPORT_X];
 
     uint16_t min_y = face_kickoffs[0].y;
 
     rasterizer_context raster_ctx;
-    raster_ctx.depths = depths;
+    raster_ctx.depths = g_depths;
     raster_ctx.user_ptr = user_ptr;
 
     rasterizer_stepping_span* active_span_list = NULL;
@@ -112,7 +113,7 @@ void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh
             return; // end of mesh (we know all meshes are contiguous)
 
                     // Clear the depth values for this scanline
-        memset(depths, 0, sizeof(depths));
+        memset(g_depths, 0, sizeof(g_depths));
 
         active_span_list = rasterizer_draw_active_spans(
             &raster_ctx,
@@ -163,9 +164,11 @@ size_t render_create_mesh_kickoffs(const viewport_t* viewport, const holomesh_t*
     return face_kickoff_count;
 }
 
+// TODO: move me
+static rasterizer_face_kickoff g_face_kickoffs[MAX_KICKOFFS];
+
 void render_draw_mesh_solid(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const matrix_t* transform) {
     const vec3_t* hull_transformed_vertices[MAX_HULLS];
-    rasterizer_face_kickoff face_kickoffs[MAX_KICKOFFS];
 
     ASSERT(mesh->hulls.size < MAX_HULLS);
 
@@ -173,7 +176,7 @@ void render_draw_mesh_solid(void* user_ptr, const viewport_t* viewport, const ho
         viewport,
         mesh,
         transform,
-        face_kickoffs,
+        g_face_kickoffs,
         MAX_KICKOFFS,
         hull_transformed_vertices);
 
@@ -181,7 +184,7 @@ void render_draw_mesh_solid(void* user_ptr, const viewport_t* viewport, const ho
         user_ptr,
         viewport,
         mesh,
-        face_kickoffs,
+        g_face_kickoffs,
         kickoff_count,
         hull_transformed_vertices);
 }
