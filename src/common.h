@@ -5,7 +5,7 @@
 // TODO: don't define this for the shipping version!
 #   define RASTERIZER_CHECKS
 #   ifdef RASTERIZER_CHECKS
-#       define ASSERT(x) if (x) {} else { APP_LOG(APP_LOG_LEVEL_ERROR, "Assert! " #x); }
+#       define ASSERT(x) if (x) {} else { APP_LOG(APP_LOG_LEVEL_ERROR, "ASSERT: " __FILE__ "(%d): " #x, __LINE__); }
 #   else
 #       define ASSERT(x) 
 #   endif
