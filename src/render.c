@@ -70,7 +70,7 @@ void render_draw_mesh_wireframe(void* user_ptr, const viewport_t* viewport, cons
 }
 
 #define MAX_HULLS 16
-#define MAX_KICKOFFS 1
+#define MAX_KICKOFFS 256
 
 void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const rasterizer_face_kickoff* face_kickoffs, size_t num_kickoffs, const vec3_t** hull_transformed_vertices) {
     // Set up the rasterizer
