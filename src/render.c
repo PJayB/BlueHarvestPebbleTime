@@ -29,9 +29,15 @@ void render_create_3d_transform(matrix_t* out, const matrix_t* proj, fix16_t ang
 }
 
 void render_transform_hull(const holomesh_hull_t* hull, const matrix_t* transform, fix16_t viewport_half_width, fix16_t viewport_half_height, vec3_t* transformed_vertices) {
+    ASSERT(hull != NULL);
+    ASSERT(hull->vertices.ptr != NULL);
+    ASSERT(hull->vertices.size > 0);
+    ASSERT(transform != NULL);
+    ASSERT(transformed_vertices != NULL);
+
     for (size_t i = 0; i < hull->vertices.size; ++i) {
-        vec3_t p = *((vec3_t*) &hull->vertices.ptr[i]);
-        matrix_vector_transform(&p, transform);
+        vec3_t p;
+        matrix_vector_transform(&p, &hull->vertices.ptr[i], transform);
 
         // Move to NDC
         p.x = fix16_floor(fix16_add(fix16_mul(p.x, viewport_half_width), viewport_half_width));
@@ -64,7 +70,7 @@ void render_draw_mesh_wireframe(void* user_ptr, const viewport_t* viewport, cons
 }
 
 #define MAX_HULLS 16
-#define MAX_KICKOFFS 256
+#define MAX_KICKOFFS 1
 
 void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const rasterizer_face_kickoff* face_kickoffs, size_t num_kickoffs, const vec3_t** hull_transformed_vertices) {
     // Set up the rasterizer

@@ -3,6 +3,9 @@
 #include "matrix.h"
 #include "render.h"
 
+// TODO: remove me
+#include "scratch.h"
+
 char g_sample_craft_name_lower[256] = {0};
 
 static const char* c_sample_craft_name = "RZ-1 A-WING INTERCEPTOR";
@@ -65,14 +68,17 @@ AppTimer* g_timer;
 // Rendering stuff
 holomesh_t* g_holomesh;
 
+//#define WIREFRAME
+
 void load_holomesh(void) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_CORELLIAN_TRANSPORT);
+    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_AWING);
     
     // Allocate space for the resource
     // TODO: estimate this better
     size_t size = resource_size(handle);
     g_holomesh = (holomesh_t*) malloc(size);
-    
+    ASSERT(g_holomesh != NULL);
+
     // Load it
     size_t copied = resource_load(handle, (uint8_t*) g_holomesh, size);
     ASSERT(copied == g_holomesh->file_size);
@@ -85,8 +91,10 @@ void load_holomesh(void) {
     // Allocate renderer resources
     render_init(g_holomesh->scratch_size);
     
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "HOLOMESH: %u bytes, %u scratch size", 
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "HOLOMESH: %u bytes [0x%x - 0x%x], %u scratch size", 
             (unsigned) size,
+            (unsigned) g_holomesh,
+            (unsigned) g_holomesh + (unsigned) size,
             (unsigned) g_holomesh->scratch_size);
 }
 
@@ -97,10 +105,11 @@ void clear_framebuffer(void) {
     }
 }
 
+#ifndef WIREFRAME
 void paint(void) {
     render_prep_frame();
 
-    clear_framebuffer();
+    //clear_framebuffer();
 
     // Get the projection matrix_t
     matrix_t transform;
@@ -113,7 +122,7 @@ void paint(void) {
 
     angle += fix16_one >> 4;
 
-    // Transform the mesh
+    // Render the mesh
     viewport_t viewport;
     viewport_init(&viewport, 144, 144);
 
@@ -125,6 +134,7 @@ void paint(void) {
     
     layer_mark_dirty(bitmap_layer_get_layer(frameBufferLayer));
 }
+#endif
 
 void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, uint8_t color) {
     // TODO: this check is done outside this function so we could remove this too
@@ -139,7 +149,6 @@ void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, uint8_t color) 
 
 void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
     (void) user_ptr;
-
     GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(frameBufferBitmap, y);
     set_pixel_on_row(&row_info, x, color);
 }
@@ -149,8 +158,8 @@ void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
     graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
 }
 
+#ifdef WIREFRAME
 void update_display(Layer* layer, GContext* ctx) {
-/*
     graphics_context_set_antialiased(ctx, true);
     graphics_context_set_stroke_color(ctx, GColorElectricBlue);
     graphics_context_set_stroke_width(ctx, 1);
@@ -177,8 +186,8 @@ void update_display(Layer* layer, GContext* ctx) {
         &viewport,
         g_holomesh,
         &transform);
-*/
 }
+#endif
 
 bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {
     uint8_t text_color;
@@ -237,11 +246,13 @@ static bool g_do_title_fade_timer = false;
 static int g_title_fade_timer = 0;
 //Hippo Command here, how can we help?
 void animation_timer_trigger(void* data) {
-    paint();
-    
+#ifndef WIREFRAME
+    // TODO: Restore me: paint();
+#else
     // TODO: remove me
-    //layer_mark_dirty(uiElementsLayer);
-    
+    layer_mark_dirty(uiElementsLayer);
+#endif
+
     if (g_do_title_fade_timer) {
         g_do_title_fade_timer = fade_between_text(textLayer, textLayerSym, g_title_fade_timer++);
     }
@@ -301,11 +312,15 @@ void handle_init(void) {
         false);
     bitmap_layer_set_bitmap(frameBufferLayer, frameBufferBitmap);
     
-    //TODO: restore me: paint();    
-    
+#ifndef WIREFRAME
+    paint();    
+#endif
+
     uiElementsLayer = layer_create(GRect(0, 0, 144, 144));
     layer_add_child(window_get_root_layer(my_window), uiElementsLayer);
+#ifdef WIREFRAME
     layer_set_update_proc(uiElementsLayer, update_display);
+#endif
     
     GRect layerSize = GRect(0, 0, 144, 168);
     const char* text = c_sample_craft_name;

@@ -17,9 +17,9 @@ void wireframe_draw(wireframe_context* ctx) {
         
         wireframe_draw_line(
             ctx->user_ptr, 
-            fix16_to_int_floor(a.v[0]), 
-            fix16_to_int_floor(a.v[1]), 
-            fix16_to_int_floor(b.v[0]), 
-            fix16_to_int_floor(b.v[1]));
+            fix16_to_int_floor(a.x), 
+            fix16_to_int_floor(a.y), 
+            fix16_to_int_floor(b.x), 
+            fix16_to_int_floor(b.y));
     }
 }
