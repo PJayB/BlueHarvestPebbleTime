@@ -9,6 +9,7 @@
 #   else
 #       define ASSERT(x) 
 #   endif
+#   define PEBBLE
 #else
 #   include <stdint.h>
 #   define WIN32_LEAN_AND_MEAN

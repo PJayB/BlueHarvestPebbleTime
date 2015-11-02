@@ -2,8 +2,13 @@
 #include "matrix.h"
 
 void matrix_create_rotation_z(matrix_t* M, fix16_t angle) {
+#ifdef PEBBLE
+    fix16_t sa = sin_lookup(angle & 0xFFFF);
+    fix16_t ca = cos_lookup(angle & 0xFFFF);
+#else
     fix16_t sa = fix16_sin(angle);
     fix16_t ca = fix16_cos(angle);
+#endif
 
     M->m[0][0] = ca;
     M->m[0][1] = sa;

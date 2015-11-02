@@ -109,7 +109,7 @@ void clear_framebuffer(void) {
 void paint(void) {
     render_prep_frame();
 
-    //clear_framebuffer();
+    clear_framebuffer();
 
     // Get the projection matrix_t
     matrix_t transform;
@@ -120,7 +120,7 @@ void paint(void) {
         &g_holomesh->transforms[holomesh_transform_perspective_square_aspect], 
         angle);
 
-    angle += fix16_one >> 4;
+    angle += fix16_one >> 6;
 
     // Render the mesh
     viewport_t viewport;
@@ -247,7 +247,7 @@ static int g_title_fade_timer = 0;
 //Hippo Command here, how can we help?
 void animation_timer_trigger(void* data) {
 #ifndef WIREFRAME
-    // TODO: Restore me: paint();
+    paint();
 #else
     // TODO: remove me
     layer_mark_dirty(uiElementsLayer);
