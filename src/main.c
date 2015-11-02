@@ -6,29 +6,7 @@
 // TODO: remove me
 #include "scratch.h"
 
-char g_sample_craft_name_lower[256] = {0};
-
-static const char* c_sample_craft_name = "RZ-1 A-WING INTERCEPTOR";
-static const char* c_sample_craft_stats[] = {
-    "LENGTH: 9.6M",
-    "WIDTH: 6.48M",
-    "HEIGHT: 3.11M",
-    "MAX. ACCEL: 5,100G",
-    "MGLT: 120 MGLT",
-    "ATMOS. SPEED: 1,300KM/H",
-    "ENGINE: NOVALDEX J-77 EVENT HORIZON",
-    "HYPRDRV: INCOM GBk-785 CLASS 1.0",
-    "POWER: MPS Bpr-99 FUSION",
-    "SHIELDS: SIRPLEX Z-9",
-    "SENSORS: FABRITECH ANs-7e",
-    "NAV: LpL-449",
-    "AVIONICS: TORPLEX Rq9.Z",
-    "COUNTERMSRS: MIRADYNE 4x-PHANTOM",
-    "ARMS: BORSTEL RG-9 LAS. CANNONS",
-    "MISSILES: DYMEK HM-6 CONCUSSION",
-    "CARGO CAP.: 40KG"
-};
-static const size_t c_sample_craft_stat_count = sizeof(c_sample_craft_stats) / sizeof(const char*);
+char g_craft_name_lower[256] = {0};
     
 static GColor c_palette[] = {
     {0b11000000},
@@ -64,6 +42,7 @@ AppTimer* g_timer;
 // Rendering stuff
 holomesh_t* g_holomesh;
 matrix_t g_lastTransform;
+size_t g_current_stat = 0;
 
 void load_holomesh(void) {
     ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_CORTN);
@@ -173,7 +152,13 @@ void update_display(Layer* layer, GContext* ctx) {
     fix16_t hh = viewport.fheight >> 1;
 
     // Transform an info point
-    vec3_t p = g_holomesh->tag_groups.ptr[0].points.ptr[0];
+    const holomesh_tag_t* tag = &g_holomesh->tags.ptr[
+        (g_current_stat++) % g_holomesh->tags.size
+    ];
+
+    const holomesh_tag_group_t* tag_group = &g_holomesh->tag_groups.ptr[tag->tag_group_index];
+
+    vec3_t p = tag_group->points.ptr[0];
     vec3_t tp;
     render_transform_point(&tp, &p, &g_lastTransform, hw, hh);
 
@@ -264,26 +249,30 @@ void animation_timer_trigger(void* data) {
     g_timer = app_timer_register(c_refreshTimer, animation_timer_trigger, NULL);    
 }
 
-size_t g_current_stat = 0;
+void set_new_stat_text(void) {
+    const holomesh_tag_t* tag = &g_holomesh->tags.ptr[
+        (g_current_stat++) % g_holomesh->tags.size
+    ];
+
+    const char* stat = g_holomesh->string_table.ptr[tag->name_string].str.ptr;
+
+    GRect currentFrame = layer_get_frame(text_layer_get_layer(infoTextLayer));
+
+    currentFrame.size = GSize(144, 168);
+    currentFrame.size = graphics_text_layout_get_content_size(
+        stat,
+        g_font_info,
+        currentFrame,
+        0,
+        GTextAlignmentLeft);
+    
+    layer_set_frame(text_layer_get_layer(infoTextLayer), currentFrame);
+    text_layer_set_text(infoTextLayer, stat);
+}
+
 void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     if (units_changed == SECOND_UNIT) {
-        const char* stat = c_sample_craft_stats[
-            (g_current_stat++) % c_sample_craft_stat_count
-        ];
-
-        GRect currentFrame = layer_get_frame(text_layer_get_layer(infoTextLayer));
-
-        currentFrame.size = GSize(144, 168);
-        currentFrame.size = graphics_text_layout_get_content_size(
-            stat,
-            g_font_info,
-            currentFrame,
-            0,
-            GTextAlignmentLeft);
-        
-        layer_set_frame(text_layer_get_layer(infoTextLayer), currentFrame);
-        text_layer_set_text(infoTextLayer, stat);
-        
+        set_new_stat_text();        
         layer_mark_dirty(uiElementsLayer);
         g_do_title_fade_timer = (g_current_stat % 4) == 0;
     }
@@ -334,10 +323,10 @@ void handle_init(void) {
     layer_set_update_proc(uiElementsLayer, update_display);
     
     GRect layerSize = GRect(0, 0, 144, 168);
-    const char* text = c_sample_craft_name;
-    create_symbol_text(g_sample_craft_name_lower, sizeof(g_sample_craft_name_lower), text);
+    const char* text = g_holomesh->string_table.ptr[g_holomesh->info.craft_name_string].str.ptr;
+    create_symbol_text(g_craft_name_lower, sizeof(g_craft_name_lower), text);
     
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "'%s' -> '%s'", text, g_sample_craft_name_lower);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "'%s' -> '%s'", text, g_craft_name_lower);
     
     GSize textSize = graphics_text_layout_get_content_size(
         text,
@@ -360,7 +349,7 @@ void handle_init(void) {
     text_layer_set_background_color(textLayerSym, GColorClear);
     text_layer_set_text_color(textLayerSym, GColorYellow);
     text_layer_set_font(textLayerSym, g_font_sw_symbol);
-    text_layer_set_text(textLayerSym, g_sample_craft_name_lower);
+    text_layer_set_text(textLayerSym, g_craft_name_lower);
     layer_set_hidden(text_layer_get_layer(textLayerSym), true);
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(textLayerSym));
 
@@ -373,7 +362,7 @@ void handle_init(void) {
     text_layer_set_background_color(infoTextLayer, GColorClear);
     text_layer_set_text_color(infoTextLayer, GColorYellow);
     text_layer_set_font(infoTextLayer, g_font_info);
-    text_layer_set_text(infoTextLayer, c_sample_craft_stats[0]);
+    set_new_stat_text();
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(infoTextLayer));
     
     // Load logo bitmap
