@@ -47,16 +47,12 @@ Layer* uiElementsLayer;
 TextLayer* textLayer;
 TextLayer* textLayerSym;
 TextLayer* infoTextLayer;
-BitmapLayer* rebelLogoLayer;
-BitmapLayer* impLogoLayer;
-BitmapLayer* bobaLogoLayer;
+BitmapLayer* logoLayer;
 TextLayer* timeLayer;
 
 // Global resources
 GBitmap* frameBufferBitmap;
-GBitmap* rebelLogoBitmap;
-GBitmap* impLogoBitmap;
-GBitmap* bobaLogoBitmap;
+GBitmap* logoBitmap;
 
 GFont g_font_sw;
 GFont g_font_sw_symbol;
@@ -71,7 +67,7 @@ holomesh_t* g_holomesh;
 //#define WIREFRAME
 
 void load_holomesh(void) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_AWING);
+    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_CORTN);
     
     // Allocate space for the resource
     // TODO: estimate this better
@@ -269,10 +265,6 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
             (g_current_stat++) % c_sample_craft_stat_count
         ]);
         
-        layer_set_hidden(bitmap_layer_get_layer(rebelLogoLayer), ((g_current_stat) % 3) != 0);
-        layer_set_hidden(bitmap_layer_get_layer(impLogoLayer),   ((g_current_stat) % 3) != 1);
-        layer_set_hidden(bitmap_layer_get_layer(bobaLogoLayer),  ((g_current_stat) % 3) != 2);
-        
         g_do_title_fade_timer = (g_current_stat % 4) == 0;
     }
 }
@@ -365,33 +357,12 @@ void handle_init(void) {
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(infoTextLayer));
     
     // Load logo bitmap
-    rebelLogoBitmap = gbitmap_create_with_resource(RESOURCE_ID_REBEL_LOGO);
-    impLogoBitmap = gbitmap_create_with_resource(RESOURCE_ID_IMPERIAL_LOGO);
-    bobaLogoBitmap = gbitmap_create_with_resource(RESOURCE_ID_BOUNTY_HUNGER_LOGO);
-    //Jet Force Push-up, you prune :)
-    // Rebel logo
+    logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_REBEL_LOGO);
     GRect logoRect = GRect(144 - c_logoSize, 168 - c_logoSize, c_logoSize, c_logoSize);
-    rebelLogoLayer = bitmap_layer_create(logoRect);
-    bitmap_layer_set_bitmap(rebelLogoLayer, rebelLogoBitmap);
-    bitmap_layer_set_compositing_mode(rebelLogoLayer, GCompOpSet);
-    layer_set_hidden(bitmap_layer_get_layer(rebelLogoLayer), true);
-    layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(rebelLogoLayer));
-
-    // Imperial logo
-    logoRect = GRect(144 - c_logoSize, 168 - c_logoSize, c_logoSize, c_logoSize);
-    impLogoLayer = bitmap_layer_create(logoRect);
-    bitmap_layer_set_bitmap(impLogoLayer, impLogoBitmap);
-    bitmap_layer_set_compositing_mode(impLogoLayer, GCompOpSet);
-    layer_set_hidden(bitmap_layer_get_layer(impLogoLayer), true);
-    layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(impLogoLayer));
-    
-    // Bounty hunter logo
-    logoRect = GRect(144 - c_logoSize, 168 - c_logoSize, c_logoSize, c_logoSize);
-    bobaLogoLayer = bitmap_layer_create(logoRect);
-    bitmap_layer_set_bitmap(bobaLogoLayer, bobaLogoBitmap);
-    bitmap_layer_set_compositing_mode(bobaLogoLayer, GCompOpSet);
-    layer_set_hidden(bitmap_layer_get_layer(bobaLogoLayer), true);
-    layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(bobaLogoLayer));
+    logoLayer = bitmap_layer_create(logoRect);
+    bitmap_layer_set_bitmap(logoLayer, logoBitmap);
+    bitmap_layer_set_compositing_mode(logoLayer, GCompOpSet);
+    layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(logoLayer));
     
     // Time
     GSize timeSize = graphics_text_layout_get_content_size(
