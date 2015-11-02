@@ -69,7 +69,7 @@ void render_draw_mesh_wireframe(void* user_ptr, const viewport_t* viewport, cons
     }
 }
 
-#define MAX_HULLS 42
+#define MAX_HULLS 47
 #define MAX_KICKOFFS 250
 
 static fix16_t g_depths[MAX_VIEWPORT_X];
@@ -170,7 +170,7 @@ static rasterizer_face_kickoff g_face_kickoffs[MAX_KICKOFFS];
 void render_draw_mesh_solid(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const matrix_t* transform) {
     const vec3_t* hull_transformed_vertices[MAX_HULLS];
 
-    ASSERT(mesh->hulls.size < MAX_HULLS);
+    ASSERT(mesh->hulls.size <= MAX_HULLS);
 
     size_t kickoff_count = render_create_mesh_kickoffs(
         viewport,
