@@ -169,26 +169,30 @@ void update_display(Layer* layer, GContext* ctx) {
     // Transform an info point
     const holomesh_tag_group_t* tag_group = &g_holomesh->tag_groups.ptr[tag->tag_group_index];
 
-    const vec3_t p = tag_group->points.ptr[0];
-    vec3_t tp;
-    render_transform_point(&tp, &p, &g_lastTransform, hw, hh);
-
     GPoint start = info_bounds.origin;
     start.x = 10;
     start.y += info_bounds.size.h + 2;
 
-    GPoint end = GPoint(
-        fix16_to_int_floor(tp.x),
-        fix16_to_int_floor(tp.y));
-
     GPoint mid1 = start;
     mid1.y += 5;
 
-    GPoint mid2 = GPoint(end.x, mid1.y);
-
     graphics_draw_line(ctx, start, mid1);
-    graphics_draw_line(ctx, mid1, mid2);
-    graphics_draw_line(ctx, mid2, end);
+
+    // TODO: precache points, get dimensions, only draw mid1->mid2 once
+    for (uint32_t i = 0; i < tag_group->points.size; ++i) {
+        const vec3_t p = tag_group->points.ptr[i];
+        vec3_t tp;
+        render_transform_point(&tp, &p, &g_lastTransform, hw, hh);
+
+        GPoint end = GPoint(
+            fix16_to_int_floor(tp.x),
+            fix16_to_int_floor(tp.y));
+
+        GPoint mid2 = GPoint(end.x, mid1.y);
+
+        graphics_draw_line(ctx, mid1, mid2);
+        graphics_draw_line(ctx, mid2, end);
+    }
 }
 
 bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {
