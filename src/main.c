@@ -71,7 +71,7 @@ holomesh_t* g_holomesh;
 //#define WIREFRAME
 
 void load_holomesh(void) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_AWING);
+    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_ISD);
     
     // Allocate space for the resource
     // TODO: estimate this better
@@ -91,11 +91,12 @@ void load_holomesh(void) {
     // Allocate renderer resources
     render_init(g_holomesh->scratch_size);
     
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "HOLOMESH: %u bytes [0x%x - 0x%x], %u scratch size", 
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "HOLOMESH: %u bytes [0x%x - 0x%x], %u scratch size, %u hulls", 
             (unsigned) size,
             (unsigned) g_holomesh,
             (unsigned) g_holomesh + (unsigned) size,
-            (unsigned) g_holomesh->scratch_size);
+            (unsigned) g_holomesh->scratch_size,
+            (unsigned) g_holomesh->hulls.size);
 }
 
 void clear_framebuffer(void) {
