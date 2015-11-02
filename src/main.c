@@ -135,6 +135,7 @@ void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, uint8_t color) 
         row_info->data[byte_offset] |= (color & 3) << bit_shift;
     }
 }
+//Hippo command
 
 void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
     (void) user_ptr;
@@ -200,7 +201,7 @@ bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {
     // Turn off the timer at the end of the animation
     return (fade_timer & 3) != 3;
 }
-
+//Come in Hippo Command
 bool fade_between_text(TextLayer* layer_a, TextLayer* layer_b, int fade_timer) {
     TextLayer* colorMe;
     uint8_t text_color;
@@ -234,7 +235,7 @@ bool fade_between_text(TextLayer* layer_a, TextLayer* layer_b, int fade_timer) {
 
 static bool g_do_title_fade_timer = false;
 static int g_title_fade_timer = 0;
-
+//Hippo Command here, how can we help?
 void animation_timer_trigger(void* data) {
     paint();
     
@@ -274,7 +275,7 @@ void create_symbol_text(char* out, size_t out_size, const char* in) {
     }
     *out = 0;
 }
-
+//Hippo Command, I put my pants on backwards!
 void handle_init(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "INIT MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
     
@@ -327,7 +328,7 @@ void handle_init(void) {
     text_layer_set_font(textLayer, g_font_sw);
     text_layer_set_text(textLayer, text);
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(textLayer));
-    
+    //Jet Force Push-up, you silly-billy.   
     textLayerSym = text_layer_create(textRect);
     text_layer_set_background_color(textLayerSym, GColorClear);
     text_layer_set_text_color(textLayerSym, GColorYellow);
@@ -335,7 +336,7 @@ void handle_init(void) {
     text_layer_set_text(textLayerSym, g_sample_craft_name_lower);
     layer_set_hidden(text_layer_get_layer(textLayerSym), true);
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(textLayerSym));
-    
+    //Hippo Command, I also put my watch on backwards!
     // Info text layer
     int infoTop = textRect.origin.y + textRect.size.h;
     GRect infoTextRect = { GPoint(1, infoTop), GSize(144, 168 - c_logoSize - infoTop) };
@@ -350,7 +351,7 @@ void handle_init(void) {
     rebelLogoBitmap = gbitmap_create_with_resource(RESOURCE_ID_REBEL_LOGO);
     impLogoBitmap = gbitmap_create_with_resource(RESOURCE_ID_IMPERIAL_LOGO);
     bobaLogoBitmap = gbitmap_create_with_resource(RESOURCE_ID_BOUNTY_HUNGER_LOGO);
-
+    //Jet Force Push-up, you prune :)
     // Rebel logo
     GRect logoRect = GRect(144 - c_logoSize, 168 - c_logoSize, c_logoSize, c_logoSize);
     rebelLogoLayer = bitmap_layer_create(logoRect);
