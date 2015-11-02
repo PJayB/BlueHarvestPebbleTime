@@ -28,6 +28,14 @@ void render_create_3d_transform(matrix_t* out, const matrix_t* proj, fix16_t ang
     matrix_multiply(out, &rotation, proj);
 }
 
+void render_transform_point(vec3_t* out_p, const vec3_t* p, const matrix_t* transform, fix16_t viewport_half_width, fix16_t viewport_half_height) {
+    matrix_vector_transform(out_p, p, transform);
+
+    // Move to NDC
+    out_p->x = fix16_floor(fix16_add(fix16_mul(out_p->x, viewport_half_width), viewport_half_width));
+    out_p->y = fix16_floor(fix16_add(fix16_mul(out_p->y, viewport_half_height), viewport_half_height));
+}
+
 void render_transform_hull(const holomesh_hull_t* hull, const matrix_t* transform, fix16_t viewport_half_width, fix16_t viewport_half_height, vec3_t* transformed_vertices) {
     ASSERT(hull != NULL);
     ASSERT(hull->vertices.ptr != NULL);

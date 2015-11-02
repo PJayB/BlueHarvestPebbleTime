@@ -63,8 +63,7 @@ AppTimer* g_timer;
 
 // Rendering stuff
 holomesh_t* g_holomesh;
-
-//#define WIREFRAME
+matrix_t g_lastTransform;
 
 void load_holomesh(void) {
     ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_CORTN);
@@ -109,11 +108,10 @@ void paint(void) {
     clear_framebuffer();
 
     // Get the projection matrix_t
-    matrix_t transform;
     static fix16_t angle = 0;
 
     render_create_3d_transform(
-        &transform, 
+        &g_lastTransform, 
         &g_holomesh->transforms[holomesh_transform_perspective_square_aspect], 
         angle);
 
@@ -127,9 +125,7 @@ void paint(void) {
         NULL,
         &viewport,
         g_holomesh,
-        &transform);
-    
-    layer_mark_dirty(bitmap_layer_get_layer(frameBufferLayer));
+        &g_lastTransform);
 }
 #endif
 
@@ -156,36 +152,50 @@ void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
     graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
 }
 
-#ifdef WIREFRAME
 void update_display(Layer* layer, GContext* ctx) {
     graphics_context_set_antialiased(ctx, true);
-    graphics_context_set_stroke_color(ctx, GColorElectricBlue);
+    graphics_context_set_stroke_color(ctx, GColorYellow);
     graphics_context_set_stroke_width(ctx, 1);
-    
-    render_prep_frame();
 
-    // Get the projection matrix_t
-    matrix_t transform;
-    static fix16_t angle = 0;
+    GRect info_bounds = layer_get_frame(text_layer_get_layer(infoTextLayer));
 
-    render_create_3d_transform(
-        &transform, 
-        &g_holomesh->transforms[holomesh_transform_perspective_square_aspect], 
-        angle);
+    GPoint start = info_bounds.origin;
+    start.x = 10;
+    start.y += info_bounds.size.h + 2;
 
-    angle += fix16_one >> 4;
+    GPoint mid1 = start;
+    mid1.y += 5;
 
-    // Transform the mesh
     viewport_t viewport;
     viewport_init(&viewport, 144, 144);
 
-    render_draw_mesh_wireframe(
-        ctx,
-        &viewport,
-        g_holomesh,
-        &transform);
+    fix16_t hw = viewport.fwidth >> 1;
+    fix16_t hh = viewport.fheight >> 1;
+
+    // Transform an info point
+    vec3_t p = g_holomesh->tag_groups.ptr[0].points.ptr[0];
+    vec3_t tp;
+    render_transform_point(&tp, &p, &g_lastTransform, hw, hh);
+
+    GPoint end = GPoint(
+        fix16_to_int_floor(tp.x),
+        fix16_to_int_floor(tp.y));
+
+    GPoint mid2 = GPoint(end.x, mid1.y);
+
+    GPoint underscore0 = info_bounds.origin;
+    underscore0.y += info_bounds.size.h + 1;
+    GPoint underscore1 = underscore0;
+    underscore1.x += info_bounds.size.w + 1;
+    GPoint quiff = underscore1;
+    quiff.y -= 3;
+
+    graphics_draw_line(ctx, underscore0, underscore1);
+    graphics_draw_line(ctx, underscore1, quiff);
+    graphics_draw_line(ctx, start, mid1);
+    graphics_draw_line(ctx, mid1, mid2);
+    graphics_draw_line(ctx, mid2, end);
 }
-#endif
 
 bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {
     uint8_t text_color;
@@ -208,6 +218,7 @@ bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {
     // Turn off the timer at the end of the animation
     return (fade_timer & 3) != 3;
 }
+
 //Come in Hippo Command
 bool fade_between_text(TextLayer* layer_a, TextLayer* layer_b, int fade_timer) {
     TextLayer* colorMe;
@@ -244,12 +255,8 @@ static bool g_do_title_fade_timer = false;
 static int g_title_fade_timer = 0;
 //Hippo Command here, how can we help?
 void animation_timer_trigger(void* data) {
-#ifndef WIREFRAME
     paint();
-#else
-    // TODO: remove me
     layer_mark_dirty(uiElementsLayer);
-#endif
 
     if (g_do_title_fade_timer) {
         g_do_title_fade_timer = fade_between_text(textLayer, textLayerSym, g_title_fade_timer++);
@@ -260,11 +267,24 @@ void animation_timer_trigger(void* data) {
 size_t g_current_stat = 0;
 void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     if (units_changed == SECOND_UNIT) {
-        // TODO: restore me: layer_mark_dirty(uiElementsLayer);
-        text_layer_set_text(infoTextLayer, c_sample_craft_stats[
+        const char* stat = c_sample_craft_stats[
             (g_current_stat++) % c_sample_craft_stat_count
-        ]);
+        ];
+
+        GRect currentFrame = layer_get_frame(text_layer_get_layer(infoTextLayer));
+
+        currentFrame.size = GSize(144, 168);
+        currentFrame.size = graphics_text_layout_get_content_size(
+            stat,
+            g_font_info,
+            currentFrame,
+            0,
+            GTextAlignmentLeft);
         
+        layer_set_frame(text_layer_get_layer(infoTextLayer), currentFrame);
+        text_layer_set_text(infoTextLayer, stat);
+        
+        layer_mark_dirty(uiElementsLayer);
         g_do_title_fade_timer = (g_current_stat % 4) == 0;
     }
 }
@@ -280,6 +300,7 @@ void create_symbol_text(char* out, size_t out_size, const char* in) {
     }
     *out = 0;
 }
+
 //Hippo Command, I put my pants on backwards!
 void handle_init(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "INIT MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
@@ -306,15 +327,11 @@ void handle_init(void) {
         false);
     bitmap_layer_set_bitmap(frameBufferLayer, frameBufferBitmap);
     
-#ifndef WIREFRAME
-    paint();    
-#endif
+    paint();
 
     uiElementsLayer = layer_create(GRect(0, 0, 144, 144));
     layer_add_child(window_get_root_layer(my_window), uiElementsLayer);
-#ifdef WIREFRAME
     layer_set_update_proc(uiElementsLayer, update_display);
-#endif
     
     GRect layerSize = GRect(0, 0, 144, 168);
     const char* text = c_sample_craft_name;
@@ -337,6 +354,7 @@ void handle_init(void) {
     text_layer_set_font(textLayer, g_font_sw);
     text_layer_set_text(textLayer, text);
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(textLayer));
+
     //Jet Force Push-up, you silly-billy.   
     textLayerSym = text_layer_create(textRect);
     text_layer_set_background_color(textLayerSym, GColorClear);
@@ -345,7 +363,9 @@ void handle_init(void) {
     text_layer_set_text(textLayerSym, g_sample_craft_name_lower);
     layer_set_hidden(text_layer_get_layer(textLayerSym), true);
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(textLayerSym));
+
     //Hippo Command, I also put my watch on backwards!
+
     // Info text layer
     int infoTop = textRect.origin.y + textRect.size.h;
     GRect infoTextRect = { GPoint(1, infoTop), GSize(144, 168 - c_logoSize - infoTop) };
