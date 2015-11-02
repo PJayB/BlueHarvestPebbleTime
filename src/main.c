@@ -71,7 +71,7 @@ holomesh_t* g_holomesh;
 //#define WIREFRAME
 
 void load_holomesh(void) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_ISD);
+    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_TIEFTR);
     
     // Allocate space for the resource
     // TODO: estimate this better
