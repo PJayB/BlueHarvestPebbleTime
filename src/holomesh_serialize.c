@@ -9,11 +9,13 @@
 #   include <memory.h>
 #   include <string.h>
 
-#define HOLOMESH_ARRAY_SIZE(x) (sizeof(*(x).ptr) * (x).size)
+#define HOLOMESH_ALIGN_POINTER(x) ASSERT(((size_t)ptr & 3) == 0)
+#define HOLOMESH_ARRAY_SIZE(x) (((sizeof(*(x).ptr) * (x).size) + 3) & ~3)
 #define HOLOMESH_COPY_ARRAY(dest, src) { \
     memcpy((dest).ptr, (src).ptr, HOLOMESH_ARRAY_SIZE(src)); \
     (dest).size = (src).size; }
 #define HOLOMESH_SET_AND_COPY_ARRAY(dest, ptr, src) { \
+    HOLOMESH_ALIGN_POINTER(ptr); \
     if (src.ptr == NULL) { dest.offset = 0; dest.size = 0; } else { \
     dest.offset = (uint32_t) ptr; \
     HOLOMESH_COPY_ARRAY(dest, src); \

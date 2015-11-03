@@ -43,7 +43,7 @@ extern "C" {
     typedef struct face_s holomesh_face_t;
     typedef struct matrix_s holomesh_transform_t;
     
-#pragma pack(push, 1)
+#pragma pack(push, 4)
     typedef struct holomesh_hull_s {
         HOLOMESH_ARRAY(holomesh_vec3_t) vertices;
         HOLOMESH_ARRAY(holomesh_vec2_t) uvs;
