@@ -9,7 +9,7 @@
 char g_craft_name_lower[256] = {0};
     
 static GColor c_palette[] = {
-    {0b11000000},
+    {0b00000000},
     {0b11000101},
     {0b11001010},
     {0b11001111}
@@ -331,7 +331,7 @@ void handle_init(void) {
     window_set_background_color(my_window, GColorBlack);
     
     // Load logo bitmap
-    logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_REBEL_LOGO);
+    logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_IMPERIAL_LOGO);
     GRect logoRect = GRect(0, 0, 144, 168);
     logoLayer = bitmap_layer_create(logoRect);
     bitmap_layer_set_bitmap(logoLayer, logoBitmap);
@@ -345,7 +345,6 @@ void handle_init(void) {
     
     // Paint layer
     frameBufferLayer = bitmap_layer_create(GRect(0, 0, 144, 144));
-    bitmap_layer_set_compositing_mode(frameBufferLayer, GCompOpSet);
     layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(frameBufferLayer));
     
     frameBufferBitmap = gbitmap_create_blank_with_palette(
@@ -354,6 +353,7 @@ void handle_init(void) {
         c_palette,
         false);
     bitmap_layer_set_bitmap(frameBufferLayer, frameBufferBitmap);
+    bitmap_layer_set_compositing_mode(frameBufferLayer, GCompOpSet);
     
     paint();
 
