@@ -94,7 +94,7 @@
                 "type": "raw"
             },
             {
-                "file": "images/bounty_hunter_logo.png",
+                "file": "images/mandbg.png",
                 "name": "BOUNTY_HUNGER_LOGO",
                 "targetPlatforms": [
                     "basalt",
@@ -123,7 +123,7 @@
                 "type": "font"
             },
             {
-                "file": "images/imp_logo.png",
+                "file": "images/impbg.png",
                 "name": "IMPERIAL_LOGO",
                 "targetPlatforms": [
                     "basalt",
@@ -132,7 +132,7 @@
                 "type": "png"
             },
             {
-                "file": "images/rebel_logo.png",
+                "file": "images/rebelbg.png",
                 "name": "REBEL_LOGO",
                 "targetPlatforms": [
                     "basalt",
