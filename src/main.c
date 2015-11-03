@@ -83,7 +83,7 @@ void load_holomesh(void) {
 }
 
 void clear_framebuffer(void) {
-    for (int i = 0; i < c_viewportWidth; ++i) {
+    for (int i = 0; i < c_viewportHeight; ++i) {
         GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(frameBufferBitmap, i);
         memset(row_info.data, 0, c_viewportWidth >> 2);
     }
