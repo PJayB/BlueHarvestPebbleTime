@@ -14,8 +14,12 @@ static GColor c_palette[] = {
     {0b11001010},
     {0b11001111}
 };
+    
+static GColor c_rebel_logo_palette[] = { {0b11000000}, {0b11010000} };
+static GColor c_imperial_logo_palette[] = { {0b11000000}, {0b11010001} };
+static GColor c_bh_logo_palette[] = { {0b11000000}, {0b1100100} };
 
-#define MAX_MEMORY_SIZE 31702
+#define MAX_MEMORY_SIZE 30000
 #define MAX_HULLS 47
 
 static const int c_refreshTimer = 100;
@@ -390,17 +394,29 @@ void handle_init(void) {
     {
     case holomesh_craft_affiliation_rebel:
         logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_REBEL_LOGO);
+        gbitmap_set_palette(logoBitmap, c_rebel_logo_palette, false);
         break;
     case holomesh_craft_affiliation_imperial:
         logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_IMPERIAL_LOGO);
+        gbitmap_set_palette(logoBitmap, c_imperial_logo_palette, false);
         break;
     case holomesh_craft_affiliation_bounty_hunter:
         logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_BOUNTY_HUNTER_LOGO);
+        gbitmap_set_palette(logoBitmap, c_bh_logo_palette, false);
         break;
     default:
         logoBitmap = NULL;
         break;
     }
+    
+    /*
+    logoBitmap = gbitmap_create_blank_with_palette(
+        GSize(c_viewportWidth, c_viewportHeight),
+        GBitmapFormat1BitPalette,
+        c_logo_palette,
+        false);
+    */
+    ASSERT(logoBitmap != NULL);
 
     GRect logoRect = GRect(0, 0, c_viewportWidth, c_viewportHeight);
     logoLayer = bitmap_layer_create(logoRect);

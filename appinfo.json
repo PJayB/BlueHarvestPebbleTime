@@ -94,15 +94,6 @@
                 "type": "raw"
             },
             {
-                "file": "images/mandbg.png",
-                "name": "BOUNTY_HUNTER_LOGO",
-                "targetPlatforms": [
-                    "basalt",
-                    "chalk"
-                ],
-                "type": "png"
-            },
-            {
                 "characterRegex": "[a-z]",
                 "file": "fonts/SFDistantGalaxySymbols.ttf",
                 "name": "FONT_SYMBOL_12",
@@ -129,7 +120,7 @@
                     "basalt",
                     "chalk"
                 ],
-                "type": "png"
+                "type": "pbi"
             },
             {
                 "file": "images/rebelbg.png",
@@ -138,7 +129,16 @@
                     "basalt",
                     "chalk"
                 ],
-                "type": "png"
+                "type": "pbi"
+            },
+            {
+                "file": "images/mandbg.png",
+                "name": "BOUNTY_HUNTER_LOGO",
+                "targetPlatforms": [
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "pbi"
             }
         ]
     },
