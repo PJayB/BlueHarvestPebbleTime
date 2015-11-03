@@ -19,6 +19,8 @@ static GColor c_palette[] = {
 #define MAX_HULLS 47
 
 static const int c_refreshTimer = 100;
+static const int c_viewportWidth = 144;
+static const int c_viewportHeight = 168;
 
 // UI elements
 Window *my_window;
@@ -81,9 +83,9 @@ void load_holomesh(void) {
 }
 
 void clear_framebuffer(void) {
-    for (int i = 0; i < 144; ++i) {
+    for (int i = 0; i < c_viewportWidth; ++i) {
         GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(frameBufferBitmap, i);
-        memset(row_info.data, 0, 144 >> 2);
+        memset(row_info.data, 0, c_viewportWidth >> 2);
     }
 }
 
@@ -97,14 +99,14 @@ void paint(void) {
 
     render_create_3d_transform(
         &g_last_transform, 
-        &g_holomesh->transforms[holomesh_transform_perspective_square_aspect], 
+        &g_holomesh->transforms[holomesh_transform_perspective_pebble_aspect], 
         angle);
 
     angle += fix16_one >> 6;
 
     // Set up viewport
     viewport_t viewport;
-    viewport_init(&viewport, 144, 144);
+    viewport_init(&viewport, c_viewportWidth, c_viewportHeight);
 
     // Transform the mesh
     render_transform_hulls_info_t t;
@@ -189,7 +191,7 @@ void update_display(Layer* layer, GContext* ctx) {
         return;
 
     viewport_t viewport;
-    viewport_init(&viewport, 144, 144);
+    viewport_init(&viewport, c_viewportWidth, c_viewportHeight);
 
     fix16_t hw = viewport.fwidth >> 1;
     fix16_t hh = viewport.fheight >> 1;
@@ -299,7 +301,7 @@ void set_new_stat_text(void) {
 
     GRect currentFrame = layer_get_frame(text_layer_get_layer(infoTextLayer));
 
-    currentFrame.size = GSize(144, 168);
+    currentFrame.size = GSize(c_viewportWidth, c_viewportHeight);
     currentFrame.size = graphics_text_layout_get_content_size(
         stat,
         g_font_info,
@@ -378,7 +380,7 @@ void handle_init(void) {
         break;
     }
 
-    GRect logoRect = GRect(0, 0, 144, 168);
+    GRect logoRect = GRect(0, 0, c_viewportWidth, c_viewportHeight);
     logoLayer = bitmap_layer_create(logoRect);
     bitmap_layer_set_bitmap(logoLayer, logoBitmap);
     layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(logoLayer));
@@ -390,11 +392,11 @@ void handle_init(void) {
     g_font_info = fonts_get_system_font(FONT_KEY_GOTHIC_09);
     
     // Paint layer
-    frameBufferLayer = bitmap_layer_create(GRect(0, 0, 144, 144));
+    frameBufferLayer = bitmap_layer_create(GRect(0, 0, c_viewportWidth, c_viewportHeight));
     layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(frameBufferLayer));
     
     frameBufferBitmap = gbitmap_create_blank_with_palette(
-        GSize(144,144),
+        GSize(c_viewportWidth, c_viewportHeight),
         GBitmapFormat2BitPalette,
         c_palette,
         false);
@@ -404,11 +406,11 @@ void handle_init(void) {
     paint();
 
     // UI elements layer
-    uiElementsLayer = layer_create(GRect(0, 0, 144, 144));
+    uiElementsLayer = layer_create(GRect(0, 0, c_viewportWidth, c_viewportHeight));
     layer_add_child(window_get_root_layer(my_window), uiElementsLayer);
     layer_set_update_proc(uiElementsLayer, update_display);
     
-    GRect layerSize = GRect(0, 0, 144, 168);
+    GRect layerSize = GRect(0, 0, c_viewportWidth, c_viewportHeight);
     const char* text = g_holomesh->string_table.ptr[g_holomesh->info.craft_name_string].str.ptr;
     create_symbol_text(g_craft_name_lower, sizeof(g_craft_name_lower), text);
     
@@ -443,7 +445,7 @@ void handle_init(void) {
 
     // Info text layer
     int infoTop = textRect.origin.y + textRect.size.h;
-    GRect infoTextRect = { GPoint(1, infoTop), GSize(144, 168 - infoTop) };
+    GRect infoTextRect = { GPoint(1, infoTop), GSize(c_viewportWidth, c_viewportHeight - infoTop) };
     infoTextLayer = text_layer_create(infoTextRect);
     text_layer_set_background_color(infoTextLayer, GColorClear);
     text_layer_set_text_color(infoTextLayer, GColorYellow);
@@ -458,7 +460,7 @@ void handle_init(void) {
         layerSize,
         0,
         GTextAlignmentLeft);
-    GRect timeRect = { GPoint(3, 168 - timeSize.h), GSize(144, timeSize.h) };
+    GRect timeRect = { GPoint(3, c_viewportHeight - timeSize.h), GSize(c_viewportWidth, timeSize.h) };
     timeLayer = text_layer_create(timeRect);
     text_layer_set_background_color(timeLayer, GColorClear);
     text_layer_set_text_color(timeLayer, GColorYellow);
