@@ -36,23 +36,42 @@ void render_transform_point(vec3_t* out_p, const vec3_t* p, const matrix_t* tran
     out_p->y = fix16_floor(fix16_add(fix16_mul(out_p->y, viewport_half_height), viewport_half_height));
 }
 
-void render_transform_hull(const holomesh_hull_t* hull, const matrix_t* transform, fix16_t viewport_half_width, fix16_t viewport_half_height, vec3_t* transformed_vertices) {
-    ASSERT(hull != NULL);
-    ASSERT(hull->vertices.ptr != NULL);
-    ASSERT(hull->vertices.size > 0);
-    ASSERT(transform != NULL);
-    ASSERT(transformed_vertices != NULL);
+void render_transform_hulls(const holomesh_hull_t* hulls, size_t num_hulls, const viewport_t* viewport, const matrix_t* transform, render_transform_hulls_info_t* info) {
+    fix16_t max_x = -fix16_maximum;
+    fix16_t max_y = -fix16_maximum;
+    fix16_t min_x = fix16_maximum;
+    fix16_t min_y = fix16_maximum;
 
-    for (size_t i = 0; i < hull->vertices.size; ++i) {
-        vec3_t p;
-        matrix_vector_transform(&p, &hull->vertices.ptr[i], transform);
+    fix16_t viewport_half_width = viewport->fwidth >> 1;
+    fix16_t viewport_half_height = viewport->fheight >> 1;
 
-        // Move to NDC
-        p.x = fix16_floor(fix16_add(fix16_mul(p.x, viewport_half_width), viewport_half_width));
-        p.y = fix16_floor(fix16_add(fix16_mul(p.y, viewport_half_height), viewport_half_height));
+    for (size_t hull_index = 0; hull_index < num_hulls; ++hull_index) {
+        const holomesh_hull_t* hull = &hulls[hull_index];
 
-        transformed_vertices[i] = p;
+        vec3_t* transformed_vertices = scratch_alloc(sizeof(vec3_t) * hull->vertices.size);
+        info->transformed_points[hull_index] = transformed_vertices;
+
+        for (size_t i = 0; i < hull->vertices.size; ++i) {
+            vec3_t p;
+            matrix_vector_transform(&p, &hull->vertices.ptr[i], transform);
+
+            // Move to NDC
+            p.x = fix16_floor(fix16_add(fix16_mul(p.x, viewport_half_width), viewport_half_width));
+            p.y = fix16_floor(fix16_add(fix16_mul(p.y, viewport_half_height), viewport_half_height));
+
+            min_x = fix16_min(min_x, p.x);
+            min_y = fix16_min(min_y, p.y);
+            max_x = fix16_max(max_x, p.x);
+            max_y = fix16_max(max_y, p.y);
+
+            transformed_vertices[i] = p;
+        }     
     }
+
+    info->min_x = min_x;
+    info->max_x = max_x;
+    info->min_y = min_y;
+    info->max_y = max_y;
 }
 
 void render_draw_hull_wireframe(void* user_ptr, const holomesh_hull_t* hull, const vec3_t* transformed_vertices) {
@@ -64,25 +83,18 @@ void render_draw_hull_wireframe(void* user_ptr, const holomesh_hull_t* hull, con
     wireframe_draw(&ctx);
 }
 
-void render_draw_mesh_wireframe(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const matrix_t* transform) {
-    fix16_t half_width = viewport->fwidth >> 1;
-    fix16_t half_height = viewport->fheight >> 1;
-
-    vec3_t* scratch = (vec3_t*) scratch_alloc(mesh->scratch_size);
-
+void render_draw_mesh_wireframe(void* user_ptr, const holomesh_t* mesh, const vec3_t* const* transformed_points) {
     for (size_t i = 0; i < mesh->hulls.size; ++i) {
         const holomesh_hull_t* hull = &mesh->hulls.ptr[i];
-        render_transform_hull(hull, transform, half_width, half_height, scratch);
-        render_draw_hull_wireframe(user_ptr, hull, scratch);
+        render_draw_hull_wireframe(user_ptr, hull, transformed_points[i]);
     }
 }
 
-#define MAX_HULLS 47
 #define MAX_KICKOFFS 250
 
 static fix16_t g_depths[MAX_VIEWPORT_X];
 
-void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const rasterizer_face_kickoff* face_kickoffs, size_t num_kickoffs, const vec3_t** hull_transformed_vertices) {
+void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const rasterizer_face_kickoff* face_kickoffs, size_t num_kickoffs, const vec3_t* const* hull_transformed_vertices) {
     // Set up the rasterizer
     ASSERT(viewport->width <= MAX_VIEWPORT_X);
 
@@ -136,21 +148,13 @@ void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh
     ASSERT(active_span_list == NULL);
 }
 
-size_t render_create_mesh_kickoffs(const viewport_t* viewport, const holomesh_t* mesh, const matrix_t* transform, rasterizer_face_kickoff* face_kickoffs, size_t max_kickoffs, const vec3_t** hull_transformed_vertices) {
+size_t render_create_mesh_kickoffs(const viewport_t* viewport, const holomesh_t* mesh, rasterizer_face_kickoff* face_kickoffs, size_t max_kickoffs, const vec3_t* const* hull_transformed_vertices) {
     rasterizer_face_kickoff* face_kickoff = &face_kickoffs[0];
     size_t face_kickoff_count = 0;
-
-    fix16_t half_width = viewport->fwidth >> 1;
-    fix16_t half_height = viewport->fheight >> 1;
 
     // Transform all the points
     for (size_t hull_index = 0; hull_index < mesh->hulls.size; ++hull_index) {
         const holomesh_hull_t* hull = &mesh->hulls.ptr[hull_index];
-
-        // Transform the hull
-        vec3_t* transformed_vertices = (vec3_t*) scratch_alloc(sizeof(vec3_t) * hull->vertices.size);
-        render_transform_hull(hull, transform, half_width, half_height, transformed_vertices);
-        hull_transformed_vertices[hull_index] = transformed_vertices;
 
         // Submit the faces to the face list
         size_t faces_added = rasterizer_create_face_kickoffs(
@@ -158,7 +162,7 @@ size_t render_create_mesh_kickoffs(const viewport_t* viewport, const holomesh_t*
             max_kickoffs - face_kickoff_count,
             viewport,
             hull_index,
-            transformed_vertices,
+            hull_transformed_vertices[hull_index],
             hull->faces.ptr,
             hull->faces.size);
 
@@ -175,18 +179,13 @@ size_t render_create_mesh_kickoffs(const viewport_t* viewport, const holomesh_t*
 // TODO: move me
 static rasterizer_face_kickoff g_face_kickoffs[MAX_KICKOFFS];
 
-void render_draw_mesh_solid(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const matrix_t* transform) {
-    const vec3_t* hull_transformed_vertices[MAX_HULLS];
-
-    ASSERT(mesh->hulls.size <= MAX_HULLS);
-
+void render_draw_mesh_solid(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const vec3_t* const* transformed_points) {
     size_t kickoff_count = render_create_mesh_kickoffs(
         viewport,
         mesh,
-        transform,
         g_face_kickoffs,
         MAX_KICKOFFS,
-        hull_transformed_vertices);
+        transformed_points);
 
     render_scanlines(
         user_ptr,
@@ -194,7 +193,7 @@ void render_draw_mesh_solid(void* user_ptr, const viewport_t* viewport, const ho
         mesh,
         g_face_kickoffs,
         kickoff_count,
-        hull_transformed_vertices);
+        transformed_points);
 }
 
 #ifdef RASTERIZER_CHECKS

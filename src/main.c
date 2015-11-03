@@ -15,6 +15,9 @@ static GColor c_palette[] = {
     {0b11001111}
 };
 
+
+#define MAX_HULLS 47
+
 static const int c_refreshTimer = 100;
 
 // UI elements
@@ -40,9 +43,10 @@ AppTimer* g_timer;
 
 // Rendering stuff
 holomesh_t* g_holomesh;
-matrix_t g_lastTransform;
+matrix_t g_last_transform;
 size_t g_current_stat = 0;
 size_t g_hologram_frame = 0;
+vec3_t* g_transformed_points[MAX_HULLS];
 
 void load_holomesh(void) {
     ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_ISD);
@@ -89,21 +93,33 @@ void paint(void) {
     static fix16_t angle = 0;
 
     render_create_3d_transform(
-        &g_lastTransform, 
+        &g_last_transform, 
         &g_holomesh->transforms[holomesh_transform_perspective_square_aspect], 
         angle);
 
     angle += fix16_one >> 6;
 
-    // Render the mesh
+    // Set up viewport
     viewport_t viewport;
     viewport_init(&viewport, 144, 144);
 
+    // Transform the mesh
+    render_transform_hulls_info_t t;
+    t.transformed_points = g_transformed_points;
+
+    render_transform_hulls(
+        g_holomesh->hulls.ptr, 
+        g_holomesh->hulls.size, 
+        &viewport, 
+        &g_last_transform, 
+        &t);
+
+    // Render the mesh
     render_draw_mesh_solid(
         NULL,
         &viewport,
         g_holomesh,
-        &g_lastTransform);
+        (const vec3_t* const*) g_transformed_points);
 
     g_hologram_frame++;
 }
@@ -191,7 +207,7 @@ void update_display(Layer* layer, GContext* ctx) {
     for (uint32_t i = 0; i < tag_group->points.size; ++i) {
         const vec3_t* p = &tag_group->points.ptr[i];
         vec3_t tp;
-        render_transform_point(&tp, p, &g_lastTransform, hw, hh);
+        render_transform_point(&tp, p, &g_last_transform, hw, hh);
 
         GPoint end = GPoint(
             fix16_to_int_floor(tp.x),
