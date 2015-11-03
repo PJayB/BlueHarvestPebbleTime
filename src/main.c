@@ -43,6 +43,7 @@ AppTimer* g_timer;
 holomesh_t* g_holomesh;
 matrix_t g_lastTransform;
 size_t g_current_stat = 0;
+size_t g_hologram_frame = 0;
 
 void load_holomesh(void) {
     ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_ISD);
@@ -80,7 +81,6 @@ void clear_framebuffer(void) {
     }
 }
 
-#ifndef WIREFRAME
 void paint(void) {
     render_prep_frame();
 
@@ -105,8 +105,9 @@ void paint(void) {
         &viewport,
         g_holomesh,
         &g_lastTransform);
+
+    g_hologram_frame++;
 }
-#endif
 
 void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, uint8_t color) {
     // TODO: this check is done outside this function so we could remove this too
@@ -123,6 +124,15 @@ void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, uint8_t color) 
 void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
     (void) user_ptr;
     GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(frameBufferBitmap, y);
+
+    // TODO: is this the right place to do this?
+    if (color < 3 && (y & 1)) {
+        color++;
+    }
+    if (color > 0 && ((y + g_hologram_frame) & 7) == 7) {
+        color--;
+    }
+
     set_pixel_on_row(&row_info, x, color);
 }
 
@@ -180,9 +190,9 @@ void update_display(Layer* layer, GContext* ctx) {
 
     // TODO: precache points, get dimensions, only draw mid1->mid2 once
     for (uint32_t i = 0; i < tag_group->points.size; ++i) {
-        const vec3_t p = tag_group->points.ptr[i];
+        const vec3_t* p = &tag_group->points.ptr[i];
         vec3_t tp;
-        render_transform_point(&tp, &p, &g_lastTransform, hw, hh);
+        render_transform_point(&tp, p, &g_lastTransform, hw, hh);
 
         GPoint end = GPoint(
             fix16_to_int_floor(tp.x),
@@ -283,10 +293,17 @@ void set_new_stat_text(void) {
     text_layer_set_text(infoTextLayer, stat);
 }
 
+uint32_t g_stat_timer = 1;
 void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     if (units_changed == SECOND_UNIT) {
-        set_new_stat_text();        
-        layer_mark_dirty(uiElementsLayer);
+        g_stat_timer++;
+
+        if (g_stat_timer == 8) {        
+            set_new_stat_text();        
+            layer_mark_dirty(uiElementsLayer);
+            g_stat_timer = 0;
+        }
+
         g_do_title_fade_timer = (g_current_stat % 4) == 0;
     }
 }
