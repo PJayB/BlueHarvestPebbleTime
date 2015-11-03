@@ -49,7 +49,7 @@ size_t g_hologram_frame = 0;
 vec3_t* g_transformed_points[MAX_HULLS];
 
 void load_holomesh(void) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_ISD);
+    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_CORTN);
     
     // Allocate space for the resource
     // TODO: estimate this better
@@ -347,7 +347,22 @@ void handle_init(void) {
     window_set_background_color(my_window, GColorBlack);
     
     // Load logo bitmap
-    logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_IMPERIAL_LOGO);
+    switch (g_holomesh->info.affiliation)
+    {
+    case holomesh_craft_affiliation_rebel:
+        logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_REBEL_LOGO);
+        break;
+    case holomesh_craft_affiliation_imperial:
+        logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_IMPERIAL_LOGO);
+        break;
+    case holomesh_craft_affiliation_bounty_hunter:
+        logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_BOUNTY_HUNTER_LOGO);
+        break;
+    default:
+        logoBitmap = NULL;
+        break;
+    }
+
     GRect logoRect = GRect(0, 0, 144, 168);
     logoLayer = bitmap_layer_create(logoRect);
     bitmap_layer_set_bitmap(logoLayer, logoBitmap);

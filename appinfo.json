@@ -95,7 +95,7 @@
             },
             {
                 "file": "images/mandbg.png",
-                "name": "BOUNTY_HUNGER_LOGO",
+                "name": "BOUNTY_HUNTER_LOGO",
                 "targetPlatforms": [
                     "basalt",
                     "chalk"
