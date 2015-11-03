@@ -115,7 +115,7 @@
             },
             {
                 "file": "data/prezr.impbg.blob",
-                "name": "IMPERIAL_LOGO",
+                "name": "PREZR_IMPBG_PACK",
                 "targetPlatforms": [
                     "basalt",
                     "chalk"
@@ -124,7 +124,7 @@
             },
             {
                 "file": "data/prezr.rebelbg.blob",
-                "name": "REBEL_LOGO",
+                "name": "PREZR_REBELBG_PACK",
                 "targetPlatforms": [
                     "basalt",
                     "chalk"
@@ -133,7 +133,7 @@
             },
             {
                 "file": "data/prezr.mandbg.blob",
-                "name": "BOUNTY_HUNTER_LOGO",
+                "name": "PREZR_MANDBG_PACK",
                 "targetPlatforms": [
                     "basalt",
                     "chalk"
