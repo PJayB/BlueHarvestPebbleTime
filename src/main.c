@@ -16,7 +16,6 @@ static GColor c_palette[] = {
 };
 
 static const int c_refreshTimer = 100;
-static const uint8_t c_logoSize = 36;
 
 // UI elements
 Window *my_window;
@@ -331,12 +330,22 @@ void handle_init(void) {
     my_window = window_create();
     window_set_background_color(my_window, GColorBlack);
     
+    // Load logo bitmap
+    logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_REBEL_LOGO);
+    GRect logoRect = GRect(0, 0, 144, 168);
+    logoLayer = bitmap_layer_create(logoRect);
+    bitmap_layer_set_bitmap(logoLayer, logoBitmap);
+    layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(logoLayer));
+
+    // Fonts    
     g_font_sw = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_12));
     g_font_sw_symbol = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_SYMBOL_12));
     g_font_time = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
     g_font_info = fonts_get_system_font(FONT_KEY_GOTHIC_09);
     
+    // Paint layer
     frameBufferLayer = bitmap_layer_create(GRect(0, 0, 144, 144));
+    bitmap_layer_set_compositing_mode(frameBufferLayer, GCompOpSet);
     layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(frameBufferLayer));
     
     frameBufferBitmap = gbitmap_create_blank_with_palette(
@@ -348,6 +357,7 @@ void handle_init(void) {
     
     paint();
 
+    // UI elements layer
     uiElementsLayer = layer_create(GRect(0, 0, 144, 144));
     layer_add_child(window_get_root_layer(my_window), uiElementsLayer);
     layer_set_update_proc(uiElementsLayer, update_display);
@@ -387,21 +397,13 @@ void handle_init(void) {
 
     // Info text layer
     int infoTop = textRect.origin.y + textRect.size.h;
-    GRect infoTextRect = { GPoint(1, infoTop), GSize(144, 168 - c_logoSize - infoTop) };
+    GRect infoTextRect = { GPoint(1, infoTop), GSize(144, 168 - infoTop) };
     infoTextLayer = text_layer_create(infoTextRect);
     text_layer_set_background_color(infoTextLayer, GColorClear);
     text_layer_set_text_color(infoTextLayer, GColorYellow);
     text_layer_set_font(infoTextLayer, g_font_info);
     set_new_stat_text();
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(infoTextLayer));
-    
-    // Load logo bitmap
-    logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_REBEL_LOGO);
-    GRect logoRect = GRect(144 - c_logoSize, 168 - c_logoSize, c_logoSize, c_logoSize);
-    logoLayer = bitmap_layer_create(logoRect);
-    bitmap_layer_set_bitmap(logoLayer, logoBitmap);
-    bitmap_layer_set_compositing_mode(logoLayer, GCompOpSet);
-    layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(logoLayer));
     
     // Time
     GSize timeSize = graphics_text_layout_get_content_size(
