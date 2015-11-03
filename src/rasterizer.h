@@ -6,7 +6,7 @@ extern "C" {
 
 // For debugging
 #define MAX_VIEWPORT_X 144
-#define MAX_VIEWPORT_Y 144
+#define MAX_VIEWPORT_Y 168
 
 typedef struct holomesh_texture_s texture_t;
     
