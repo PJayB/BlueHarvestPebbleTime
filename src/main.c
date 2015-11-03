@@ -49,7 +49,7 @@ size_t g_hologram_frame = 0;
 vec3_t* g_transformed_points[MAX_HULLS];
 
 void load_holomesh(void) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_CORTN);
+    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_SLAVEONE);
     
     // Allocate space for the resource
     // TODO: estimate this better
@@ -75,6 +75,8 @@ void load_holomesh(void) {
             (unsigned) g_holomesh + (unsigned) size,
             (unsigned) g_holomesh->scratch_size,
             (unsigned) g_holomesh->hulls.size);
+
+    ASSERT(g_holomesh->hulls.size <= MAX_HULLS);
 }
 
 void clear_framebuffer(void) {
