@@ -4,6 +4,7 @@
 extern "C" {
 #endif
 
+void scratch_set(void* ptr, size_t size);
 void scratch_init(size_t size);
 void scratch_free(void);
 void* scratch_alloc(size_t size);

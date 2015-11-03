@@ -9,6 +9,18 @@ static size_t g_scratch_size = 0;
 static size_t g_scratch_hwm = 0;
 #endif
 
+void scratch_set(void* ptr, size_t size) {
+    g_scratch = (uint8_t*) ptr;
+    ASSERT(g_scratch);
+
+    g_scratch_offset = 0;
+    g_scratch_size = size;
+
+#ifdef RASTERIZER_CHECKS
+    g_scratch_hwm = 0;
+#endif
+}
+
 void scratch_init(size_t size) {
     if (g_scratch != NULL) {
         free(g_scratch);

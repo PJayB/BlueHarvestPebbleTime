@@ -10,9 +10,8 @@
 static size_t g_active_span_high_watermark = 0;
 #endif
 
-void render_init(size_t scratch_size) {
+void render_init(void) {
     rasterizer_init_span_pool();
-    scratch_init(scratch_size);
 }
 
 void render_prep_frame(void) {

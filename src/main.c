@@ -15,7 +15,7 @@ static GColor c_palette[] = {
     {0b11001111}
 };
 
-
+#define MAX_MEMORY_SIZE 31702
 #define MAX_HULLS 47
 
 static const int c_refreshTimer = 100;
@@ -58,11 +58,11 @@ void load_holomesh(void) {
     
     // Allocate space for the resource
     // TODO: estimate this better
-    size_t size = resource_size(handle);
-    g_holomesh = (holomesh_t*) malloc(size);
+    g_holomesh = (holomesh_t*) malloc(MAX_MEMORY_SIZE);
     ASSERT(g_holomesh != NULL);
 
     // Load it
+    size_t size = resource_size(handle);
     size_t copied = resource_load(handle, (uint8_t*) g_holomesh, size);
     ASSERT(copied == g_holomesh->file_size);
     ASSERT(size >= g_holomesh->file_size);
@@ -72,13 +72,18 @@ void load_holomesh(void) {
     ASSERT(hr == hmresult_ok);
     
     // Allocate renderer resources
-    render_init(g_holomesh->scratch_size);
+    size_t scratch_size = g_holomesh->scratch_size;
+    scratch_set(((uint8_t*)g_holomesh) + size, scratch_size);
     
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "HOLOMESH: %u bytes [0x%x - 0x%x], %u scratch size, %u hulls", 
-            (unsigned) size,
+    // Init the renderer
+    render_init();
+    
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "HOLOMESH: %u bytes [0x%x-0x%x], %u mesh, %u scratch, %u hulls", 
+            (unsigned) MAX_MEMORY_SIZE,
             (unsigned) g_holomesh,
-            (unsigned) g_holomesh + (unsigned) size,
-            (unsigned) g_holomesh->scratch_size,
+            (unsigned) g_holomesh + (unsigned) MAX_MEMORY_SIZE,
+            (unsigned) size,
+            (unsigned) scratch_size,
             (unsigned) g_holomesh->hulls.size);
 
     ASSERT(g_holomesh->hulls.size <= MAX_HULLS);
@@ -504,7 +509,6 @@ void handle_deinit(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "SHUTDOWN:");
     APP_LOG(APP_LOG_LEVEL_DEBUG, "  pre: %u bytes used", (unsigned) heap_bytes_used());
 
-    scratch_free();
     free(g_holomesh);
 
     APP_LOG(APP_LOG_LEVEL_DEBUG, "  holomesh cleaned up: %u bytes remaining", (unsigned) heap_bytes_used());
