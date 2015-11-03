@@ -47,6 +47,7 @@ matrix_t g_last_transform;
 size_t g_current_stat = 0;
 size_t g_hologram_frame = 0;
 vec3_t* g_transformed_points[MAX_HULLS];
+char g_time_str[12];
 
 void load_holomesh(void) {
     ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_SLAVEONE);
@@ -310,9 +311,18 @@ void set_new_stat_text(void) {
     text_layer_set_text(infoTextLayer, stat);
 }
 
+void update_time_display(struct tm *tick_time) {
+    if (clock_is_24h_style()) {
+        strftime(g_time_str, sizeof(g_time_str), "%R", tick_time);
+    } else {
+        strftime(g_time_str, sizeof(g_time_str), "%r", tick_time);
+    }
+    text_layer_set_text(timeLayer, g_time_str);
+}
+
 uint32_t g_stat_timer = 1;
 void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-    if (units_changed == SECOND_UNIT) {
+    if (units_changed & SECOND_UNIT) {
         g_stat_timer++;
 
         if (g_stat_timer == 8) {        
@@ -322,6 +332,9 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         }
 
         g_do_title_fade_timer = (g_current_stat % 4) == 0;
+    }
+    if (units_changed & MINUTE_UNIT) {
+        update_time_display(tick_time);
     }
 }
 
@@ -373,7 +386,7 @@ void handle_init(void) {
     // Fonts    
     g_font_sw = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_12));
     g_font_sw_symbol = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_SYMBOL_12));
-    g_font_time = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+    g_font_time = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
     g_font_info = fonts_get_system_font(FONT_KEY_GOTHIC_09);
     
     // Paint layer
@@ -445,19 +458,21 @@ void handle_init(void) {
         layerSize,
         0,
         GTextAlignmentLeft);
-    GRect timeRect = { GPoint(0, 168 - timeSize.h), GSize(144, timeSize.h) };
+    GRect timeRect = { GPoint(3, 168 - timeSize.h), GSize(144, timeSize.h) };
     timeLayer = text_layer_create(timeRect);
     text_layer_set_background_color(timeLayer, GColorClear);
     text_layer_set_text_color(timeLayer, GColorYellow);
     text_layer_set_font(timeLayer, g_font_time);
-    text_layer_set_text(timeLayer, "00:00 AM");
+    //text_layer_set_text(timeLayer, "23:45 AM");
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(timeLayer));
     
+    time_t t = time(NULL);
+    update_time_display(localtime(&t));
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "FINAL MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
     
     window_stack_push(my_window, true);
-    tick_timer_service_subscribe(SECOND_UNIT, tick_handler);
+    tick_timer_service_subscribe(SECOND_UNIT | MINUTE_UNIT, tick_handler);
     
     g_timer = app_timer_register(c_refreshTimer, animation_timer_trigger, NULL);
 }
