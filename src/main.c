@@ -25,11 +25,13 @@ static const int c_viewportHeight = 168;
 // UI elements
 Window *my_window;
 BitmapLayer *frameBufferLayer;
+BitmapLayer* logoLayer;
+#if 0
 Layer* uiElementsLayer;
+#endif
 TextLayer* textLayer;
 TextLayer* textLayerSym;
 TextLayer* infoTextLayer;
-BitmapLayer* logoLayer;
 TextLayer* timeLayer;
 
 // Global resources
@@ -161,6 +163,7 @@ void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
     graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
 }
 
+#if 0
 void update_display(Layer* layer, GContext* ctx) {
 
     graphics_context_set_antialiased(ctx, false);
@@ -224,6 +227,7 @@ void update_display(Layer* layer, GContext* ctx) {
         graphics_draw_line(ctx, mid2, end);
     }
 }
+#endif
 
 bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {
     uint8_t text_color;
@@ -248,6 +252,7 @@ bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {
 }
 
 //Come in Hippo Command
+#if 0
 bool fade_between_text(TextLayer* layer_a, TextLayer* layer_b, int fade_timer) {
     TextLayer* colorMe;
     uint8_t text_color;
@@ -281,14 +286,22 @@ bool fade_between_text(TextLayer* layer_a, TextLayer* layer_b, int fade_timer) {
 
 static bool g_do_title_fade_timer = false;
 static int g_title_fade_timer = 0;
+#endif
+
 //Hippo Command here, how can we help?
 void animation_timer_trigger(void* data) {
     paint();
+    
+#if 0
     layer_mark_dirty(uiElementsLayer);
 
     if (g_do_title_fade_timer) {
         g_do_title_fade_timer = fade_between_text(textLayer, textLayerSym, g_title_fade_timer++);
     }
+#else
+    layer_mark_dirty((Layer*) frameBufferLayer);
+#endif    
+    
     g_timer = app_timer_register(c_refreshTimer, animation_timer_trigger, NULL);    
 }
 
@@ -329,11 +342,15 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
         if (g_stat_timer == 8) {        
             set_new_stat_text();        
+#if 0
             layer_mark_dirty(uiElementsLayer);
+#endif
             g_stat_timer = 0;
         }
-
+        
+#if 0
         g_do_title_fade_timer = (g_current_stat % 4) == 0;
+#endif
     }
     if (units_changed & MINUTE_UNIT) {
         update_time_display(tick_time);
@@ -405,11 +422,13 @@ void handle_init(void) {
     
     paint();
 
+#if 0
     // UI elements layer
     uiElementsLayer = layer_create(GRect(0, 0, c_viewportWidth, c_viewportHeight));
     layer_add_child(window_get_root_layer(my_window), uiElementsLayer);
     layer_set_update_proc(uiElementsLayer, update_display);
-    
+#endif
+
     GRect layerSize = GRect(0, 0, c_viewportWidth, c_viewportHeight);
     const char* text = g_holomesh->string_table.ptr[g_holomesh->info.craft_name_string].str.ptr;
     create_symbol_text(g_craft_name_lower, sizeof(g_craft_name_lower), text);
@@ -480,9 +499,42 @@ void handle_init(void) {
 }
 
 void handle_deinit(void) {
-  bitmap_layer_destroy(frameBufferLayer);
-    // TODO
-  window_destroy(my_window);
+    app_timer_cancel(g_timer);
+
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "SHUTDOWN:");
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "  pre: %u bytes used", (unsigned) heap_bytes_used());
+
+    scratch_free();
+    free(g_holomesh);
+
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "  holomesh cleaned up: %u bytes remaining", (unsigned) heap_bytes_used());
+
+    gbitmap_destroy(frameBufferBitmap);
+    gbitmap_destroy(logoBitmap);  
+
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "  bitmaps cleaned up: %u bytes remaining", (unsigned) heap_bytes_used());
+
+    fonts_unload_custom_font(g_font_sw_symbol);
+    fonts_unload_custom_font(g_font_sw);
+
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "  fonts cleaned up: %u bytes remaining", (unsigned) heap_bytes_used());
+
+    text_layer_destroy(timeLayer);
+    text_layer_destroy(textLayer);
+    text_layer_destroy(textLayerSym);
+    text_layer_destroy(infoTextLayer);
+#if 0
+    layer_destroy(uiElementsLayer);
+#endif
+    bitmap_layer_destroy(frameBufferLayer);
+    bitmap_layer_destroy(logoLayer);
+
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "  layers cleaned up: %u bytes remaining", (unsigned) heap_bytes_used());
+
+
+    window_destroy(my_window);
+
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "FINAL SHUTDOWN: %u bytes used", (unsigned) heap_bytes_used());
 }
 
 int main(void) {
