@@ -26,7 +26,7 @@ static inline uint8_t rasterizer_decode_texel_2bit(
     // Sample from the texture
     uint8_t packed4 = data[v * stride + u4];
     // Shift the texel from the group of 4 into place
-    uint8_t unpacked = packed4;//(packed4 >> (2 * (u - u4 * 4)));
+    uint8_t unpacked = (packed4 >> (2 * (u - u4 * 4)));
     // Mask off higher texels
     return unpacked & 3;
 }
