@@ -114,31 +114,31 @@
                 "type": "font"
             },
             {
-                "file": "images/impbg.png",
+                "file": "data/prezr.impbg.blob",
                 "name": "IMPERIAL_LOGO",
                 "targetPlatforms": [
                     "basalt",
                     "chalk"
                 ],
-                "type": "pbi"
+                "type": "raw"
             },
             {
-                "file": "images/rebelbg.png",
+                "file": "data/prezr.rebelbg.blob",
                 "name": "REBEL_LOGO",
                 "targetPlatforms": [
                     "basalt",
                     "chalk"
                 ],
-                "type": "pbi"
+                "type": "raw"
             },
             {
-                "file": "images/mandbg.png",
+                "file": "data/prezr.mandbg.blob",
                 "name": "BOUNTY_HUNTER_LOGO",
                 "targetPlatforms": [
                     "basalt",
                     "chalk"
                 ],
-                "type": "pbi"
+                "type": "raw"
             }
         ]
     },
