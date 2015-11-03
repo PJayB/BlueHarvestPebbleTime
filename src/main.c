@@ -6,6 +6,10 @@
 // TODO: remove me
 #include "scratch.h"
 
+#define PREZR_IMPORT
+#include "prezr.h"
+#include "prezr.packages.h"
+
 char g_craft_name_lower[256] = {0};
     
 static GColor c_palette[] = {
@@ -14,10 +18,6 @@ static GColor c_palette[] = {
     {0b11001010},
     {0b11001111}
 };
-    
-static GColor c_rebel_logo_palette[] = { {0b11000000}, {0b11010000} };
-static GColor c_imperial_logo_palette[] = { {0b11000000}, {0b11010001} };
-static GColor c_bh_logo_palette[] = { {0b11000000}, {0b1100100} };
 
 #define MAX_MEMORY_SIZE 30000
 #define MAX_HULLS 47
@@ -58,7 +58,7 @@ vec3_t* g_transformed_points[MAX_HULLS];
 char g_time_str[12];
 
 void load_holomesh(void) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_SLAVEONE);
+    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_ISD);
     
     // Allocate space for the resource
     // TODO: estimate this better
@@ -393,16 +393,16 @@ void handle_init(void) {
     switch (g_holomesh->info.affiliation)
     {
     case holomesh_craft_affiliation_rebel:
-        logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_REBEL_LOGO);
-        gbitmap_set_palette(logoBitmap, c_rebel_logo_palette, false);
+        prezr_load_rebelbg();
+        logoBitmap = prezr_rebelbg.resources[0].bitmap;
         break;
     case holomesh_craft_affiliation_imperial:
-        logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_IMPERIAL_LOGO);
-        gbitmap_set_palette(logoBitmap, c_imperial_logo_palette, false);
+        prezr_load_impbg();
+        logoBitmap = prezr_impbg.resources[0].bitmap;
         break;
     case holomesh_craft_affiliation_bounty_hunter:
-        logoBitmap = gbitmap_create_with_resource(RESOURCE_ID_BOUNTY_HUNTER_LOGO);
-        gbitmap_set_palette(logoBitmap, c_bh_logo_palette, false);
+        prezr_load_mandbg();
+        logoBitmap = prezr_mandbg.resources[0].bitmap;
         break;
     default:
         logoBitmap = NULL;
@@ -530,7 +530,10 @@ void handle_deinit(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "  holomesh cleaned up: %u bytes remaining", (unsigned) heap_bytes_used());
 
     gbitmap_destroy(frameBufferBitmap);
-    gbitmap_destroy(logoBitmap);  
+    
+    prezr_unload_impbg();
+    prezr_unload_rebelbg();
+    prezr_unload_mandbg();
 
     APP_LOG(APP_LOG_LEVEL_DEBUG, "  bitmaps cleaned up: %u bytes remaining", (unsigned) heap_bytes_used());
 
