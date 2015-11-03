@@ -19,6 +19,30 @@ static GColor c_palette[] = {
     {0b11001111}
 };
 
+static const struct craft_info_s {
+    int resource_id;
+} c_craft_info[] = {
+    { RESOURCE_ID_HOLO_ASSAULT },
+    { RESOURCE_ID_HOLO_AWING },
+    { RESOURCE_ID_HOLO_BWING },
+    { RESOURCE_ID_HOLO_CORTN },
+    { RESOURCE_ID_HOLO_CORV },
+    { RESOURCE_ID_HOLO_ISD },
+    { RESOURCE_ID_HOLO_NEB },
+    { RESOURCE_ID_HOLO_SHUTTLE },
+    { RESOURCE_ID_HOLO_SLAVEONE },
+    { RESOURCE_ID_HOLO_SSD },
+    { RESOURCE_ID_HOLO_TIEADV },
+    { RESOURCE_ID_HOLO_TIEBMB },
+    { RESOURCE_ID_HOLO_TIEDEL },
+    { RESOURCE_ID_HOLO_TIEFTR },
+    { RESOURCE_ID_HOLO_TIEINT },
+    { RESOURCE_ID_HOLO_XWING },
+    { RESOURCE_ID_HOLO_YWING }
+};
+
+static const int c_craft_info_count = sizeof(c_craft_info) / sizeof(struct craft_info_s);
+
 #define MAX_MEMORY_SIZE 30000
 #define MAX_HULLS 47
 
@@ -56,9 +80,12 @@ size_t g_current_stat = 0;
 size_t g_hologram_frame = 0;
 vec3_t* g_transformed_points[MAX_HULLS];
 char g_time_str[12];
+int g_current_craft = 0;
 
-void load_holomesh(void) {
-    ResHandle handle = resource_get_handle(RESOURCE_ID_HOLO_ISD);
+void load_holomesh(int craft_index) {
+    g_current_craft = craft_index;
+    int resource_id = c_craft_info[craft_index].resource_id;
+    ResHandle handle = resource_get_handle(resource_id);
     
     // Allocate space for the resource
     // TODO: estimate this better
@@ -382,7 +409,7 @@ void create_symbol_text(char* out, size_t out_size, const char* in) {
 void handle_init(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "INIT MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
     
-    load_holomesh();
+    load_holomesh(rand() % c_craft_info_count);
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "UI MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
 
