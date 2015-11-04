@@ -127,6 +127,11 @@ void clear_framebuffer(void) {
     }
 }
 
+typedef struct framebuffer_s {
+    uint8_t* data;
+    uint32_t row_stride;
+} framebuffer_t;
+
 void paint(void) {
     render_prep_frame();
 
@@ -156,10 +161,14 @@ void paint(void) {
         &viewport, 
         &g_last_transform, 
         &t);
+    
+    framebuffer_t fb;
+    fb.data = gbitmap_get_data(frameBufferBitmap);
+    fb.row_stride = gbitmap_get_bytes_per_row(frameBufferBitmap);
 
     // Render the mesh
     render_draw_mesh_solid(
-        NULL,
+        &fb,
         &viewport,
         g_holomesh,
         (const vec3_t* const*) g_transformed_points);
@@ -167,21 +176,17 @@ void paint(void) {
     g_hologram_frame++;
 }
 
-void set_pixel_on_row(const GBitmapDataRowInfo* row_info, int x, uint8_t color) {
-    // TODO: this check is done outside this function so we could remove this too
-    if (x >= row_info->min_x && x <= row_info->max_x) {
-        int byte_offset = x >> 2; // divide by 4 to get actual pixel byte
-        int bit_shift = (~x & 3) << 1;
-        uint8_t mask = 3 << bit_shift;
-        uint8_t src = row_info->data[byte_offset] & ~mask;
-        row_info->data[byte_offset] = src | (color << bit_shift);
-    }
+void set_pixel_on_row(uint8_t* row_data, int x, uint8_t color) {
+    int byte_offset = x >> 2; // divide by 4 to get actual pixel byte
+    int bit_shift = (~x & 3) << 1;
+    uint8_t mask = 3 << bit_shift;
+    uint8_t src = row_data[byte_offset] & ~mask;
+    row_data[byte_offset] = src | (color << bit_shift);
 }
 //Hippo command
 
 void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
-    (void) user_ptr;
-    GBitmapDataRowInfo row_info = gbitmap_get_data_row_info(frameBufferBitmap, y);
+    framebuffer_t* fb = (framebuffer_t*) user_ptr;
 
     // TODO: is this the right place to do this?
     if (color < 3 && (y & 1)) {
@@ -191,7 +196,7 @@ void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
         color--;
     }
 
-    set_pixel_on_row(&row_info, x, color);
+    set_pixel_on_row(&fb->data[y * fb->row_stride], x, color);
 }
 
 void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
