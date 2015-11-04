@@ -5,12 +5,12 @@
 #   include <stdlib.h>
 #endif
 
-typedef struct _rasterizer_stepping_span_freelist_node {
+typedef struct rasterizer_stepping_span_freelist_node_s {
     union {
-        rasterizer_stepping_span span;
-        struct _rasterizer_stepping_span_freelist_node* next;
+        rasterizer_stepping_span_t span;
+        struct rasterizer_stepping_span_freelist_node_s* next;
     };
-} rasterizer_stepping_span_freelist_node;
+} rasterizer_stepping_span_freelist_node_t;
 
 #ifdef SANDBOX
 #   define MAX_SPAN_COUNT 100000
@@ -18,8 +18,8 @@ typedef struct _rasterizer_stepping_span_freelist_node {
 #   define MAX_SPAN_COUNT 100
 #endif
 
-static rasterizer_stepping_span_freelist_node g_span_pool[MAX_SPAN_COUNT];
-static rasterizer_stepping_span_freelist_node* g_first_free = NULL;
+static rasterizer_stepping_span_freelist_node_t g_span_pool[MAX_SPAN_COUNT];
+static rasterizer_stepping_span_freelist_node_t* g_first_free = NULL;
 static size_t g_active_span_count = 0;
 
 static const size_t c_span_pool_size = MAX_SPAN_COUNT;
@@ -32,22 +32,22 @@ void rasterizer_init_span_pool(void) {
     g_first_free = &g_span_pool[0];
 }
 
-rasterizer_stepping_span* rasterizer_allocate_stepping_span(void) {
+rasterizer_stepping_span_t* rasterizer_allocate_stepping_span(void) {
     ASSERT(g_first_free != NULL);
     if (g_first_free == NULL) {
         ASSERT(g_active_span_count == c_span_pool_size);
         return NULL; // no more spans available! :(
     }
-    rasterizer_stepping_span* span = &g_first_free->span;
+    rasterizer_stepping_span_t* span = &g_first_free->span;
     g_first_free = g_first_free->next;
     g_active_span_count++;
     return span;
 }
 
-void rasterizer_free_stepping_span(rasterizer_stepping_span* span) {
+void rasterizer_free_stepping_span(rasterizer_stepping_span_t* span) {
     ASSERT(g_active_span_count > 0);
     ASSERT(span != NULL);
-    rasterizer_stepping_span_freelist_node* node = (rasterizer_stepping_span_freelist_node*) span;
+    rasterizer_stepping_span_freelist_node_t* node = (rasterizer_stepping_span_freelist_node_t*) span;
     node->next = g_first_free;
     g_first_free = node;
     g_active_span_count--;

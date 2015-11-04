@@ -55,7 +55,7 @@ const clip_point_t* get_clip_point(const clip_point_t* arr, int num, int i)
     return &arr[j];
 }
 
-rasterizer_stepping_span* rasterizer_clip_spans_for_triangle(rasterizer_stepping_span* span_list, const viewport_t* viewport, const texture_t* texture, const vec3_t* a, const vec2_t* uva, const vec3_t* b, const vec2_t* uvb, const vec3_t* c, const vec2_t* uvc, int16_t start_y) {
+rasterizer_stepping_span_t* rasterizer_clip_spans_for_triangle(rasterizer_stepping_span_t* span_list, const viewport_t* viewport, const texture_t* texture, const vec3_t* a, const vec2_t* uva, const vec3_t* b, const vec2_t* uvb, const vec3_t* c, const vec2_t* uvc, int16_t start_y) {
     clip_point_t scratch1[7] =
     {
         {*a, *uva},

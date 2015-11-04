@@ -93,20 +93,20 @@ void render_draw_mesh_wireframe(void* user_ptr, const holomesh_t* mesh, const ve
 
 static fix16_t g_depths[MAX_VIEWPORT_X];
 
-void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const rasterizer_face_kickoff* face_kickoffs, size_t num_kickoffs, const vec3_t* const* hull_transformed_vertices) {
+void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const rasterizer_face_kickoff_t* face_kickoffs, size_t num_kickoffs, const vec3_t* const* hull_transformed_vertices) {
     // Set up the rasterizer
     ASSERT(viewport->width <= MAX_VIEWPORT_X);
 
     uint16_t min_y = face_kickoffs[0].y;
 
-    rasterizer_context raster_ctx;
+    rasterizer_context_t raster_ctx;
     raster_ctx.depths = g_depths;
     raster_ctx.user_ptr = user_ptr;
 
-    rasterizer_stepping_span* active_span_list = NULL;
+    rasterizer_stepping_span_t* active_span_list = NULL;
 
-    const rasterizer_face_kickoff* face_kickoff = face_kickoffs;
-    const rasterizer_face_kickoff* last_kickoff = face_kickoff + num_kickoffs;
+    const rasterizer_face_kickoff_t* face_kickoff = face_kickoffs;
+    const rasterizer_face_kickoff_t* last_kickoff = face_kickoff + num_kickoffs;
     for (uint16_t y = min_y; y < viewport->height; ++y)
     {
         // Kick off any faces this scanline?
@@ -147,8 +147,8 @@ void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh
     ASSERT(active_span_list == NULL);
 }
 
-size_t render_create_mesh_kickoffs(const viewport_t* viewport, const holomesh_t* mesh, rasterizer_face_kickoff* face_kickoffs, size_t max_kickoffs, const vec3_t* const* hull_transformed_vertices) {
-    rasterizer_face_kickoff* face_kickoff = &face_kickoffs[0];
+size_t render_create_mesh_kickoffs(const viewport_t* viewport, const holomesh_t* mesh, rasterizer_face_kickoff_t* face_kickoffs, size_t max_kickoffs, const vec3_t* const* hull_transformed_vertices) {
+    rasterizer_face_kickoff_t* face_kickoff = &face_kickoffs[0];
     size_t face_kickoff_count = 0;
 
     // Transform all the points
@@ -176,7 +176,7 @@ size_t render_create_mesh_kickoffs(const viewport_t* viewport, const holomesh_t*
 }
 
 // TODO: move me
-static rasterizer_face_kickoff g_face_kickoffs[MAX_KICKOFFS];
+static rasterizer_face_kickoff_t g_face_kickoffs[MAX_KICKOFFS];
 
 void render_draw_mesh_solid(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const vec3_t* const* transformed_points) {
     size_t kickoff_count = render_create_mesh_kickoffs(
