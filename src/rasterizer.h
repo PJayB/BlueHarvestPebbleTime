@@ -35,6 +35,11 @@ extern void rasterizer_set_pixel(
     void* user_ptr,
     int x, int y,
     uint8_t color);
+extern void rasterizer_set_pixel_4(
+    void* user_ptr,
+    int x, int y,
+    uint8_t color,
+    uint8_t mask);
 
 typedef struct rasterizer_face_kickoff_s {
     uint8_t y;
