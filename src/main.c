@@ -185,20 +185,6 @@ void set_pixel_on_row(uint8_t* row_data, int x, uint8_t color) {
 }
 //Hippo command
 
-void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
-    framebuffer_t* fb = (framebuffer_t*) user_ptr;
-
-    // TODO: is this the right place to do this?
-    if (color < 3 && (y & 1)) {
-        color++;
-    }
-    if (color > 0 && ((y - g_hologram_frame) & 7) == 7) {
-        color--;
-    }
-
-    set_pixel_on_row(&fb->data[y * fb->row_stride], x, color);
-}
-
 void rasterizer_set_pixel_4(void* user_ptr, int x, int y, uint8_t color, uint8_t mask) {
     framebuffer_t* fb = (framebuffer_t*) user_ptr;
 
