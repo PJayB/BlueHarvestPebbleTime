@@ -414,7 +414,9 @@ void create_symbol_text(char* out, size_t out_size, const char* in) {
 void handle_init(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "INIT MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
     
-    load_holomesh(rand() % c_craft_info_count);
+    // TODO: restore this once done profiling
+    //load_holomesh(rand() % c_craft_info_count);
+    load_holomesh(5);
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "UI MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
 
@@ -473,7 +475,10 @@ void handle_init(void) {
     bitmap_layer_set_bitmap(frameBufferLayer, frameBufferBitmap);
     bitmap_layer_set_compositing_mode(frameBufferLayer, GCompOpSet);
     
+    uint32_t paint_start_time = get_milliseconds();
     paint();
+    uint32_t paint_time = get_milliseconds() - paint_start_time;
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "PAINT %ums", (unsigned) paint_time);
 
 #if 0
     // UI elements layer
