@@ -83,6 +83,15 @@ void transform_points(
 
 void viewport_init(viewport_t* viewport, uint16_t width, uint16_t height);
 
+#ifdef PEBBLE
+inline uint32_t get_milliseconds(void) {
+    time_t s;
+    uint16_t ms;
+    time_ms(&s, &ms);
+    return 1000U * (uint32_t) s + (uint32_t) ms;
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif
