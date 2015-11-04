@@ -14,9 +14,9 @@ char g_craft_name_lower[256] = {0};
     
 static GColor c_palette[] = {
     {0b00000000},
-    {GColorCobaltBlue},
-    {GColorVividCerulean},
-    {GColorCeleste}
+    {GColorCobaltBlueARGB8}, // CobaltBlue or DukeBlue
+    {GColorVividCeruleanARGB8},
+    {GColorCelesteARGB8}
 };
 
 static const struct craft_info_s {
@@ -187,7 +187,7 @@ void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
     if (color < 3 && (y & 1)) {
         color++;
     }
-    if (color > 0 && ((y + g_hologram_frame) & 7) == 7) {
+    if (color > 0 && ((y - g_hologram_frame) & 7) == 7) {
         color--;
     }
 
