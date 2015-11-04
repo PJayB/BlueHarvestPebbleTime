@@ -79,7 +79,9 @@ void rasterizer_draw_span(
             base_v += step_v;
         }
 
-        rasterizer_set_pixel_4(ctx->user_ptr, ia & ~3, iy, c, mask);
+        if (mask != 0) {
+            rasterizer_set_pixel_4(ctx->user_ptr, ia & ~3, iy, c, mask);
+        }
     }
 
     // Iterate over the scanline until we aren't a multiple of 4 any more
@@ -91,7 +93,7 @@ void rasterizer_draw_span(
         uint8_t c = 0;
 
         int16_t ex = ix + 4;
-
+        
         for (int16_t jx = ix; jx < ex; ++jx, shift -= 2) {
             fix16_t oldZ = ctx->depths[jx];
             if (z > 0 && oldZ < z) 
@@ -112,7 +114,9 @@ void rasterizer_draw_span(
             base_v += step_v;
         }
 
-        rasterizer_set_pixel_4(ctx->user_ptr, ix, iy, c, mask);
+        if (mask != 0) {
+            rasterizer_set_pixel_4(ctx->user_ptr, ix, iy, c, mask);
+        }
     }
 
     // Now render the last few pixels
@@ -143,7 +147,9 @@ void rasterizer_draw_span(
             base_v += step_v;
         }
 
-        rasterizer_set_pixel_4(ctx->user_ptr, ib4, iy, c, mask);
+        if (mask != 0) {
+            rasterizer_set_pixel_4(ctx->user_ptr, ib4, iy, c, mask);
+        }
     }
 
 }
