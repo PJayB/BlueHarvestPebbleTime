@@ -14,9 +14,9 @@ char g_craft_name_lower[256] = {0};
     
 static GColor c_palette[] = {
     {0b00000000},
-    {0b11000101},
-    {0b11001010},
-    {0b11001111}
+    {GColorCobaltBlue},
+    {GColorVividCerulean},
+    {GColorCeleste}
 };
 
 static const struct craft_info_s {
