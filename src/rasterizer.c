@@ -2,6 +2,24 @@
 #include "rasterizer.h"
 #include "holomesh.h"
 
+uint8_t rasterizer_get_fragment_color(const texture_t* texture, fix16_t base_u, fix16_t base_v, fix16_t iz) {
+    // Get the texture coordinates in [0,1]
+    fix16_t u = fix16_ufrac(fix16_mul(base_u, iz));
+    fix16_t v = fix16_ufrac(fix16_mul(base_v, iz));
+
+    // Scale the UVs to texture size
+    u = fix16_mul(u, texture->scale_u);
+    v = fix16_mul(v, texture->scale_v);
+
+    // Get the texel 
+    uint16_t iu = (uint16_t) fix16_to_int_floor(u);
+    uint16_t iv = (uint16_t) fix16_to_int_floor(v);
+    return rasterizer_decode_texel_2bit(
+        texture->data.ptr,
+        texture->stride,
+        iu, iv);
+}
+
 void rasterizer_draw_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
@@ -31,8 +49,30 @@ void rasterizer_draw_span(
     fix16_t base_u = ua;
     fix16_t base_v = va;
 
-    // Iterate over the scanline
-    for (int16_t ix = ia; ix < ib; ++ix) {
+    int16_t ia4 = (ia + 3) & ~3;
+    int16_t ib4 = ib & ~3;
+
+    if (ia4 > ia) {
+        // Do the first 1-3 pixels of the scanline
+        for (int16_t ix = ia; ix < ia4; ++ix) {
+            fix16_t oldZ = ctx->depths[ix];
+            if (z > 0 && oldZ < z)
+            {
+                // TODO: only interpolate this occasionally
+                fix16_t iz = fix16_rcp(z);
+                uint8_t p = rasterizer_get_fragment_color(texture, base_u, base_v, iz);
+                rasterizer_set_pixel(ctx->user_ptr, ix, iy, p);
+                ctx->depths[ix] = z;
+            }
+
+            z += step_z;
+            base_u += step_u;
+            base_v += step_v;
+        }
+    }
+
+    // Iterate over the scanline until we aren't a multiple of 4 any more
+    for (int16_t ix = ia4; ix < ib4; ++ix) {
         ASSERT(ix >= 0 && ix < MAX_VIEWPORT_X);
 
         fix16_t oldZ = ctx->depths[ix];
@@ -41,21 +81,8 @@ void rasterizer_draw_span(
             // TODO: only interpolate this occasionally
             fix16_t iz = fix16_rcp(z);
 
-            // Get the texture coordinates in [0,1]
-            fix16_t u = fix16_ufrac(fix16_mul(base_u, iz));
-            fix16_t v = fix16_ufrac(fix16_mul(base_v, iz));
-
-            // Scale the UVs to texture size
-            u = fix16_mul(u, texture->scale_u);
-            v = fix16_mul(v, texture->scale_v);
-
-            // Get the texel 
-            uint16_t iu = (uint16_t) fix16_to_int_floor(u);
-            uint16_t iv = (uint16_t) fix16_to_int_floor(v);
-            uint8_t p = rasterizer_decode_texel_2bit(
-                texture->data.ptr,
-                texture->stride,
-                iu, iv);
+            // Get the pixel color
+            uint8_t p = rasterizer_get_fragment_color(texture, base_u, base_v, iz);
 
             // Set the pixel
             rasterizer_set_pixel(ctx->user_ptr, ix, iy, p);
@@ -67,6 +94,27 @@ void rasterizer_draw_span(
         base_u += step_u;
         base_v += step_v;
     }
+
+    // Now render the last few pixels
+    if (ib4 < ib) {
+        // Do the first 1-3 pixels of the scanline
+        for (int16_t ix = ib4; ix < ib; ++ix) {
+            fix16_t oldZ = ctx->depths[ix];
+            if (z > 0 && oldZ < z)
+            {
+                // TODO: only interpolate this occasionally
+                fix16_t iz = fix16_rcp(z);
+                uint8_t p = rasterizer_get_fragment_color(texture, base_u, base_v, iz);
+                rasterizer_set_pixel(ctx->user_ptr, ix, iy, p);
+                ctx->depths[ix] = z;
+            }
+
+            z += step_z;
+            base_u += step_u;
+            base_v += step_v;
+        }
+    }
+
 }
 
 void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2, int16_t iy) {
