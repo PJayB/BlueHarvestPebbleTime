@@ -22,39 +22,23 @@ uint8_t rasterizer_get_fragment_color(const texture_t* texture, fix16_t base_u, 
 
 extern void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color);
 
-void rasterizer_draw_span(
+void rasterizer_draw_short_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
     int16_t ia, int16_t ib,
     int16_t iy,
-    fix16_t az, fix16_t bz,
-    fix16_t ua, fix16_t ub,
-    fix16_t va, fix16_t vb) {
+    fix16_t* p_z, fix16_t step_z,
+    fix16_t* p_base_u, fix16_t step_u,
+    fix16_t* p_base_v, fix16_t step_v) {
 
-    // Skip zero size lines
-    if (ia == ib) return;
+    ASSERT(ia < ib);
 
-    ASSERT(ia <= ib);
-    ASSERT(ia < MAX_VIEWPORT_X);
-    ASSERT(ib >= 0);
-    ASSERT(iy >= 0);
-    ASSERT(iy < MAX_VIEWPORT_Y);
-    ASSERT(texture != NULL);
-
-    // Get the interpolants
-    fix16_t g = fix16_rcp(fix16_from_int(ib - ia));
-    fix16_t step_z = fix16_mul(fix16_sub(bz, az), g);
-    fix16_t z = az;
-
-    fix16_t step_u = fix16_mul(fix16_sub(ub, ua), g);
-    fix16_t step_v = fix16_mul(fix16_sub(vb, va), g);
-    fix16_t base_u = ua;
-    fix16_t base_v = va;
+    fix16_t z = *p_z;
+    fix16_t base_u = *p_base_u;
+    fix16_t base_v = *p_base_v;
 
     // Iterate over the scanline
     for (int16_t ix = ia; ix < ib; ++ix) {
-        ASSERT(ix >= 0 && ix < MAX_VIEWPORT_X);
-
         fix16_t oldZ = ctx->depths[ix];
         if (z > 0 && oldZ < z)
         {
@@ -77,6 +61,150 @@ void rasterizer_draw_span(
         z += step_z;
         base_u += step_u;
         base_v += step_v;
+    }
+
+    *p_z = z;
+    *p_base_u = base_u;
+    *p_base_v = base_v;
+}
+
+void rasterizer_draw_long_span(
+    rasterizer_context_t* ctx,
+    const texture_t* texture,
+    int16_t ia, int16_t ib,
+    int16_t iy,
+    fix16_t* p_z, fix16_t step_z,
+    fix16_t* p_base_u, fix16_t step_u,
+    fix16_t* p_base_v, fix16_t step_v) {
+
+    ASSERT(ia < ib);
+
+    fix16_t z = *p_z;
+    fix16_t base_u = *p_base_u;
+    fix16_t base_v = *p_base_v;
+
+    int16_t ia4 = (ia + 3) & ~3;
+    int16_t ib4 = ib & ~3;
+
+    if (ia4 > ia) {
+        // Draw up to ia4
+        rasterizer_draw_short_span(
+            ctx,
+            texture,
+            ia, ia4,
+            iy,
+            &z, step_z,
+            &base_u, step_u,
+            &base_v, step_v);
+    }
+
+    // Iterate over the scanline
+    int16_t ix4 = ia4 >> 2;
+    for (int16_t cx = ia4; cx < ib4; cx += 4, ++ix4) {
+        uint8_t mask = 0;
+        uint8_t c = 0;
+        uint8_t shift = 6;
+
+        int16_t ex = cx + 4;
+
+        for (int16_t ix = cx; ix < ex; ++ix, shift -= 2) {
+            fix16_t oldZ = ctx->depths[ix];
+            if (z > 0 && oldZ < z)
+            {
+                // TODO: only interpolate this occasionally
+                fix16_t iz = fix16_rcp(z);
+
+                // Get the texel 
+                uint8_t p = rasterizer_get_fragment_color(
+                    texture,
+                    base_u,
+                    base_v,
+                    iz);
+
+                // Set the pixel
+                c |= p << shift;
+                mask |= 3 << shift;
+
+                ctx->depths[ix] = z;
+            }
+
+            z += step_z;
+            base_u += step_u;
+            base_v += step_v;
+        }
+
+        if (mask != 0) {
+            rasterizer_set_pixel_4(ctx->user_ptr, ix4, iy, c, mask);
+        }
+    }
+
+    if (ib4 < ib) {
+        // Draw up to ia4
+        rasterizer_draw_short_span(
+            ctx,
+            texture,
+            ib4, ib,
+            iy,
+            &z, step_z,
+            &base_u, step_u,
+            &base_v, step_v);
+    }
+
+    *p_z = z;
+    *p_base_u = base_u;
+    *p_base_v = base_v;
+}
+
+void rasterizer_draw_span(
+    rasterizer_context_t* ctx,
+    const texture_t* texture,
+    int16_t ia, int16_t ib,
+    int16_t iy,
+    fix16_t az, fix16_t bz,
+    fix16_t ua, fix16_t ub,
+    fix16_t va, fix16_t vb) {
+
+    // Skip zero size lines
+    if (ia == ib) return;
+
+    ASSERT(ia <= ib);
+    ASSERT(ia < MAX_VIEWPORT_X);
+    ASSERT(ib >= 0);
+    ASSERT(iy >= 0);
+    ASSERT(iy < MAX_VIEWPORT_Y);
+    ASSERT(texture != NULL);
+
+    // Get the interpolants
+    int16_t delta = ib - ia;
+    fix16_t g = fix16_rcp(fix16_from_int(delta));
+    fix16_t step_z = fix16_mul(fix16_sub(bz, az), g);
+    fix16_t z = az;
+
+    fix16_t step_u = fix16_mul(fix16_sub(ub, ua), g);
+    fix16_t step_v = fix16_mul(fix16_sub(vb, va), g);
+    fix16_t base_u = ua;
+    fix16_t base_v = va;
+
+    if (delta < 4 || (delta == 4 && (ia & 3) != 0)) {
+        rasterizer_draw_short_span(
+            ctx,
+            texture,
+            ia, ib,
+            iy,
+            &z, step_z,
+            &base_u, step_u,
+            &base_v, step_v);
+    }
+    else
+    {
+        rasterizer_draw_long_span(
+            ctx,
+            texture,
+            ia, ib,
+            iy,
+            &z, step_z,
+            &base_u, step_u,
+            &base_v, step_v);
     }
 }
 
