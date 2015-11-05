@@ -23,8 +23,8 @@ uint8_t rasterizer_get_fragment_color(const texture_t* texture, fix16_t base_u, 
 void rasterizer_draw_short_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
-    int16_t ia, int16_t ib,
-    int16_t iy,
+    uint8_t ia, uint8_t ib,
+    uint8_t iy,
     fix16_t* p_z, fix16_t step_z,
     fix16_t* p_base_u, fix16_t step_u,
     fix16_t* p_base_v, fix16_t step_v) {
@@ -36,7 +36,7 @@ void rasterizer_draw_short_span(
     fix16_t base_v = *p_base_v;
 
     // Iterate over the scanline
-    for (int16_t ix = ia; ix < ib; ++ix) {
+    for (uint8_t ix = ia; ix < ib; ++ix) {
         fix16_t oldZ = ctx->depths[ix];
         if (z > 0 && oldZ < z)
         {
@@ -69,8 +69,8 @@ void rasterizer_draw_short_span(
 void rasterizer_draw_long_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
-    int16_t ia, int16_t ib,
-    int16_t iy,
+    uint8_t ia, uint8_t ib,
+    uint8_t iy,
     fix16_t* p_z, fix16_t step_z,
     fix16_t* p_base_u, fix16_t step_u,
     fix16_t* p_base_v, fix16_t step_v) {
@@ -81,8 +81,8 @@ void rasterizer_draw_long_span(
     fix16_t base_u = *p_base_u;
     fix16_t base_v = *p_base_v;
 
-    int16_t ia4 = (ia + 3) & ~3;
-    int16_t ib4 = ib & ~3;
+    uint8_t ia4 = (ia + 3) & ~3;
+    uint8_t ib4 = ib & ~3;
 
     if (ia4 > ia) {
         // Draw up to ia4
@@ -97,15 +97,15 @@ void rasterizer_draw_long_span(
     }
 
     // Iterate over the scanline
-    int16_t ix4 = ia4 >> 2;
-    for (int16_t cx = ia4; cx < ib4; cx += 4, ++ix4) {
+    uint16_t ix4 = ia4 >> 2;
+    for (uint8_t cx = ia4; cx < ib4; cx += 4, ++ix4) {
         uint8_t mask = 0;
         uint8_t c = 0;
         uint8_t shift = 6;
 
-        int16_t ex = cx + 4;
+        uint8_t ex = cx + 4;
 
-        for (int16_t ix = cx; ix < ex; ++ix, shift -= 2) {
+        for (uint8_t ix = cx; ix < ex; ++ix, shift -= 2) {
             fix16_t oldZ = ctx->depths[ix];
             if (z > 0 && oldZ < z)
             {
@@ -156,8 +156,8 @@ void rasterizer_draw_long_span(
 void rasterizer_draw_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
-    int16_t ia, int16_t ib,
-    int16_t iy,
+    uint8_t ia, uint8_t ib,
+    uint8_t iy,
     fix16_t az, fix16_t bz,
     fix16_t ua, fix16_t ub,
     fix16_t va, fix16_t vb) {
@@ -173,7 +173,7 @@ void rasterizer_draw_span(
     ASSERT(texture != NULL);
 
     // Get the interpolants
-    int16_t delta = ib - ia;
+    uint8_t delta = ib - ia;
     fix16_t g = fix16_rcp(fix16_from_int(delta));
     fix16_t step_z = fix16_mul(fix16_sub(bz, az), g);
     fix16_t z = az;
@@ -206,7 +206,7 @@ void rasterizer_draw_span(
     }
 }
 
-void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2, int16_t iy) {
+void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2, uint8_t iy) {
     if (edge1->x > edge2->x) {
         rasterizer_stepping_edge_t* t = edge1;
         edge1 = edge2;
@@ -222,8 +222,8 @@ void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture
     rasterizer_draw_span(
         ctx,
         texture,
-        fix16_to_int_floor(x0),
-        fix16_to_int_floor(x1),
+        (uint8_t) fix16_to_int_floor(x0),
+        (uint8_t) fix16_to_int_floor(x1),
         iy,
         edge1->z, edge2->z,
         edge1->u, edge2->u,
@@ -239,7 +239,7 @@ void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture
     edge2->v += edge2->step_v;
 }
 
-rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* ctx, rasterizer_stepping_span_t* active_span_list, uint16_t y) {
+rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* ctx, rasterizer_stepping_span_t* active_span_list, uint8_t y) {
     rasterizer_stepping_span_t* new_active_span_list = NULL;
     rasterizer_stepping_span_t* next_span = active_span_list;
     while (next_span != NULL) {

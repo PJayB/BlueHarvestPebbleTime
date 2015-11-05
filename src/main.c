@@ -328,7 +328,10 @@ static int g_title_fade_timer = 0;
 
 //Hippo Command here, how can we help?
 void animation_timer_trigger(void* data) {
+    uint32_t paint_start_time = get_milliseconds();
     paint();
+    uint32_t paint_time = get_milliseconds() - paint_start_time;
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "PAINT %ums", (unsigned) paint_time);
     
 #if 0
     layer_mark_dirty(uiElementsLayer);
