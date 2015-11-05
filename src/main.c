@@ -6,9 +6,7 @@
 // TODO: remove me
 #include "scratch.h"
 
-#define PREZR_IMPORT
-#include "prezr.h"
-#include "prezr.packages.h"
+//#define PROFILE
 
 char g_craft_name_lower[256] = {0};
     
@@ -41,6 +39,14 @@ static const struct craft_info_s {
     { RESOURCE_ID_HOLO_YWING }
 };
 
+static const int c_affiliation_logos[] = {
+    0, //holomesh_craft_affiliation_not_set,
+    0, //holomesh_craft_affiliation_neutral,
+    RESOURCE_ID_PREZR_REBELBG_PACK, //holomesh_craft_affiliation_rebel,
+    RESOURCE_ID_PREZR_IMPBG_PACK, //holomesh_craft_affiliation_imperial,
+    RESOURCE_ID_PREZR_MANDBG_PACK  //holomesh_craft_affiliation_bounty_hunter
+};
+
 static const int c_craft_info_count = sizeof(c_craft_info) / sizeof(struct craft_info_s);
 
 #define MAX_MEMORY_SIZE 30000
@@ -50,13 +56,13 @@ static const int c_refreshTimer = 100;
 static const int c_viewportWidth = 144;
 static const int c_viewportHeight = 168;
 
+#define BACKGROUND_BLOB_SIZE 3054
+static uint8_t g_background_blob[BACKGROUND_BLOB_SIZE];
+
 // UI elements
 Window *my_window;
 BitmapLayer *frameBufferLayer;
 BitmapLayer* logoLayer;
-#if 0
-Layer* uiElementsLayer;
-#endif
 TextLayer* textLayer;
 TextLayer* textLayerSym;
 TextLayer* infoTextLayer;
@@ -74,13 +80,55 @@ GFont g_font_info;
 AppTimer* g_timer;
 
 // Rendering stuff
-holomesh_t* g_holomesh;
+holomesh_t* g_holomesh = NULL;
 matrix_t g_last_transform;
 size_t g_current_stat = 0;
 size_t g_hologram_frame = 0;
 vec3_t* g_transformed_points[MAX_HULLS];
 char g_time_str[12];
 int g_current_craft = 0;
+
+void update_title_and_info(void);
+
+typedef struct prezr_pack_header_s {
+    uint32_t reserved;
+    uint32_t num_resources;
+} prezr_pack_header_t;
+
+typedef struct prezr_bitmap_s {
+    uint16_t width;
+    uint16_t height;
+    size_t   data_offset;
+} prezr_bitmap_t;
+
+const uint8_t* prezr_load_image_data(void* blob) {
+    prezr_pack_header_t* pack_header = pack_header = (prezr_pack_header_t*) blob;
+    prezr_bitmap_t* resources = (prezr_bitmap_t*) (blob + sizeof(prezr_pack_header_t));
+    
+    ASSERT(pack_header->num_resources == 1);
+    
+    // Fix up the pointer to the resource data
+    return blob + resources[0].data_offset;
+}
+
+void load_background_image(int affiliation) {
+    int logo_resource_id = c_affiliation_logos[affiliation];
+    ASSERT(logo_resource_id != 0);
+    ASSERT(resource_size(logo_resource_id) == sizeof(g_background_blob));
+    
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Loading logo resource %i for affiliation %i", logo_resource_id, affiliation);
+    
+    ResHandle logo_resource_handle = resource_get_handle(logo_resource_id);
+    if (resource_load(logo_resource_handle, g_background_blob, sizeof(g_background_blob)) != sizeof(g_background_blob)) {
+        APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to load background logo resource %u", (unsigned) logo_resource_id);
+    } else if (logoBitmap == NULL) {
+        const uint8_t* data = prezr_load_image_data(g_background_blob);
+        logoBitmap = gbitmap_create_with_data(data);
+        if (logoBitmap == NULL) {
+            APP_LOG(APP_LOG_LEVEL_ERROR, "Loaded background logo resource %u but gbitmap create failed", (unsigned) logo_resource_id);
+        }
+    }
+}
 
 void load_holomesh(int craft_index) {
     g_current_craft = craft_index;
@@ -89,8 +137,10 @@ void load_holomesh(int craft_index) {
     
     // Allocate space for the resource
     // TODO: estimate this better
-    g_holomesh = (holomesh_t*) malloc(MAX_MEMORY_SIZE);
-    ASSERT(g_holomesh != NULL);
+    if (g_holomesh == NULL) {
+        g_holomesh = (holomesh_t*) malloc(MAX_MEMORY_SIZE);
+        ASSERT(g_holomesh != NULL);
+    }
 
     // Load it
     size_t size = resource_size(handle);
@@ -108,6 +158,9 @@ void load_holomesh(int craft_index) {
     
     // Init the renderer
     render_init();
+    
+    // Load the logo
+    load_background_image(g_holomesh->info.affiliation);
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "HOLOMESH: %u bytes [0x%x-0x%x], %u mesh, %u scratch, %u hulls", 
             (unsigned) MAX_MEMORY_SIZE,
@@ -175,162 +228,28 @@ int8_t get_color_mod(uint8_t y) {
     return (y & 1) - (((y - g_hologram_frame) & 7) == 7);
 }
 
-void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
-    GContext* ctx = (GContext*) user_ptr;
-    graphics_draw_line(ctx, GPoint(x0, y0), GPoint(x1, y1));
-}
-
-#if 0
-void update_display(Layer* layer, GContext* ctx) {
-
-    graphics_context_set_antialiased(ctx, false);
-    graphics_context_set_stroke_color(ctx, GColorYellow);
-    graphics_context_set_stroke_width(ctx, 1);
-
-    // --- Draw an underline ---
-
-    GRect info_bounds = layer_get_frame(text_layer_get_layer(infoTextLayer));
-
-    GPoint underscore0 = info_bounds.origin;
-    underscore0.y += info_bounds.size.h + 1;
-    GPoint underscore1 = underscore0;
-    underscore1.x += info_bounds.size.w + 1;
-    GPoint quiff = underscore1;
-    quiff.y -= 3;
-
-    graphics_draw_line(ctx, underscore0, underscore1);
-    graphics_draw_line(ctx, underscore1, quiff);
-
-    // --- Draw tag lines (if applicable) ---
-
-    const holomesh_tag_t* tag = &g_holomesh->tags.ptr[
-        g_current_stat % g_holomesh->tags.size
-    ];
-
-    if (tag->tag_group_index == 0xFFFF)
-        return;
-
-    viewport_t viewport;
-    viewport_init(&viewport, c_viewportWidth, c_viewportHeight);
-
-    fix16_t hw = viewport.fwidth >> 1;
-    fix16_t hh = viewport.fheight >> 1;
-
-    // Transform an info point
-    const holomesh_tag_group_t* tag_group = &g_holomesh->tag_groups.ptr[tag->tag_group_index];
-
-    GPoint start = info_bounds.origin;
-    start.x = 10;
-    start.y += info_bounds.size.h + 2;
-
-    GPoint mid1 = start;
-    mid1.y += 5;
-
-    graphics_draw_line(ctx, start, mid1);
-
-    // TODO: precache points, get dimensions, only draw mid1->mid2 once
-    for (uint32_t i = 0; i < tag_group->points.size; ++i) {
-        const vec3_t* p = &tag_group->points.ptr[i];
-        vec3_t tp;
-        render_transform_point(&tp, p, &g_last_transform, hw, hh);
-
-        GPoint end = GPoint(
-            fix16_to_int_floor(tp.x),
-            fix16_to_int_floor(tp.y));
-
-        GPoint mid2 = GPoint(end.x, mid1.y);
-
-        graphics_draw_line(ctx, mid1, mid2);
-        graphics_draw_line(ctx, mid2, end);
-    }
-}
-#endif
-
-bool fade_text(TextLayer* layer, int fade_timer, bool fade_out) {
-    uint8_t text_color;
-    
-    // Fade in the opposite direction?
-    if (fade_out) {
-        text_color = ~fade_timer & 3;
-    } else {
-        text_color = fade_timer & 3;
-    }
-    
-    if (text_color == 0) {
-        layer_set_hidden(text_layer_get_layer(layer), true);
-    } else {
-        layer_set_hidden(text_layer_get_layer(layer), false);
-        GColor8 col = { .argb = 0b11000000 | (text_color << 4) | (text_color << 2)};
-        text_layer_set_text_color(layer, col);
-    }
-
-    // Turn off the timer at the end of the animation
-    return (fade_timer & 3) != 3;
-}
-
-//Come in Hippo Command
-#if 0
-bool fade_between_text(TextLayer* layer_a, TextLayer* layer_b, int fade_timer) {
-    TextLayer* colorMe;
-    uint8_t text_color;
-    
-    // Fade in the opposite direction depending on 
-    // where we are in the animation
-    if ((fade_timer & 4) == 0) {
-        text_color = ~fade_timer & 3;
-    } else {
-        text_color = fade_timer & 3;
-    }    
-    
-    // Which layer are we referring to?
-    if (((fade_timer - 4) & 8) == 0) {
-        colorMe = layer_b;   
-    } else {
-        colorMe = layer_a;
-    }
-    
-    if (text_color == 0) {
-        layer_set_hidden(text_layer_get_layer(colorMe), true);
-    } else {
-        layer_set_hidden(text_layer_get_layer(colorMe), false);
-        GColor8 col = { .argb = 0b11000000 | (text_color << 4) | (text_color << 2)};
-        text_layer_set_text_color(colorMe, col);
-    }
-
-    // Turn off the timer at the end of the animation
-    return (fade_timer & 7) != 7;
-}
-
-static bool g_do_title_fade_timer = false;
-static int g_title_fade_timer = 0;
-#endif
-
-//Hippo Command here, how can we help?
+#ifdef PROFILE
 static uint32_t max_time = 0;
 static uint32_t min_time = 10000;
 static uint32_t total_time = 0;
 static uint32_t samples = 0;
+#endif
 
 void animation_timer_trigger(void* data) {
+#ifdef PROFILE
     uint32_t paint_start_time = get_milliseconds();
+#endif
     paint();
+#ifdef PROFILE
     uint32_t paint_time = get_milliseconds() - paint_start_time;
     min_time = min_time > paint_time ? paint_time : min_time;
     max_time = max_time < paint_time ? paint_time : max_time;
     total_time += paint_time;
     samples++;
     APP_LOG(APP_LOG_LEVEL_DEBUG, "PAINT %ums (min %ums, max %ums, avg %ums)", (unsigned) paint_time, (unsigned) min_time, (unsigned) max_time, (unsigned)(total_time / samples));
+#endif
     
-#if 0
-    layer_mark_dirty(uiElementsLayer);
-
-    if (g_do_title_fade_timer) {
-        g_do_title_fade_timer = fade_between_text(textLayer, textLayerSym, g_title_fade_timer++);
-    }
-#else
-    layer_mark_dirty((Layer*) frameBufferLayer);
-#endif    
-    
+    layer_mark_dirty((Layer*) frameBufferLayer); 
     g_timer = app_timer_register(c_refreshTimer, animation_timer_trigger, NULL);    
 }
 
@@ -341,7 +260,7 @@ void set_new_stat_text(void) {
 
     const char* stat = g_holomesh->string_table.ptr[tag->name_string].str.ptr;
 
-    GRect currentFrame = layer_get_frame(text_layer_get_layer(infoTextLayer));
+    GRect currentFrame = layer_get_bounds(text_layer_get_layer(infoTextLayer));
 
     currentFrame.size = GSize(c_viewportWidth, c_viewportHeight);
     currentFrame.size = graphics_text_layout_get_content_size(
@@ -351,7 +270,7 @@ void set_new_stat_text(void) {
         0,
         GTextAlignmentLeft);
     
-    layer_set_frame(text_layer_get_layer(infoTextLayer), currentFrame);
+    layer_set_bounds(text_layer_get_layer(infoTextLayer), currentFrame);
     text_layer_set_text(infoTextLayer, stat);
 }
 
@@ -369,19 +288,15 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     if (units_changed & SECOND_UNIT) {
         g_stat_timer++;
 
+        set_new_stat_text();
         if (g_stat_timer == 8) {        
-            set_new_stat_text();        
-#if 0
-            layer_mark_dirty(uiElementsLayer);
-#endif
+            set_new_stat_text();
             g_stat_timer = 0;
         }
-        
-#if 0
-        g_do_title_fade_timer = (g_current_stat % 4) == 0;
-#endif
     }
     if (units_changed & MINUTE_UNIT) {
+        load_holomesh(rand() % c_craft_info_count);
+        update_title_and_info();
         update_time_display(tick_time);
     }
 }
@@ -398,47 +313,50 @@ void create_symbol_text(char* out, size_t out_size, const char* in) {
     *out = 0;
 }
 
+void update_title_and_info(void) {
+    GRect layerSize = GRect(0, 0, c_viewportWidth, c_viewportHeight);
+    
+    const char* text = g_holomesh->string_table.ptr[g_holomesh->info.craft_name_string].str.ptr;
+    create_symbol_text(g_craft_name_lower, sizeof(g_craft_name_lower), text);
+    
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "'%s' -> '%s'", text, g_craft_name_lower);
+    
+    GSize textSize = graphics_text_layout_get_content_size(
+        text,
+        g_font_sw,
+        layerSize,
+        0,
+        GTextAlignmentLeft);
+    
+    GRect textRect = { GPoint(0, 0), textSize };
+    layer_set_bounds((Layer*) textLayer, textRect);
+    layer_set_bounds((Layer*) textLayerSym, textRect);
+    
+    text_layer_set_text(textLayer, text);
+    text_layer_set_text(textLayerSym, g_craft_name_lower);
+
+    GRect currentFrame = layer_get_bounds((Layer*) infoTextLayer);
+    currentFrame.origin.y = textRect.origin.y + textRect.size.h / 2;
+    layer_set_bounds((Layer*) infoTextLayer, currentFrame);
+
+    set_new_stat_text();
+}
+
 //Hippo Command, I put my pants on backwards!
 void handle_init(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "INIT MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
     
     // TODO: restore this once done profiling
-    //load_holomesh(rand() % c_craft_info_count);
+#ifndef PROFILE
+    load_holomesh(rand() % c_craft_info_count);
+#else
     load_holomesh(3);
+#endif
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "UI MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
 
     my_window = window_create();
     window_set_background_color(my_window, GColorBlack);
-    
-    // Load logo bitmap
-    switch (g_holomesh->info.affiliation)
-    {
-    case holomesh_craft_affiliation_rebel:
-        prezr_load_rebelbg();
-        logoBitmap = prezr_rebelbg.resources[0].bitmap;
-        break;
-    case holomesh_craft_affiliation_imperial:
-        prezr_load_impbg();
-        logoBitmap = prezr_impbg.resources[0].bitmap;
-        break;
-    case holomesh_craft_affiliation_bounty_hunter:
-        prezr_load_mandbg();
-        logoBitmap = prezr_mandbg.resources[0].bitmap;
-        break;
-    default:
-        logoBitmap = NULL;
-        break;
-    }
-    
-    /*
-    logoBitmap = gbitmap_create_blank_with_palette(
-        GSize(c_viewportWidth, c_viewportHeight),
-        GBitmapFormat1BitPalette,
-        c_logo_palette,
-        false);
-    */
-    ASSERT(logoBitmap != NULL);
 
     GRect logoRect = GRect(0, 0, c_viewportWidth, c_viewportHeight);
     logoLayer = bitmap_layer_create(logoRect);
@@ -465,54 +383,30 @@ void handle_init(void) {
     
     paint();
 
-#if 0
-    // UI elements layer
-    uiElementsLayer = layer_create(GRect(0, 0, c_viewportWidth, c_viewportHeight));
-    layer_add_child(window_get_root_layer(my_window), uiElementsLayer);
-    layer_set_update_proc(uiElementsLayer, update_display);
-#endif
-
     GRect layerSize = GRect(0, 0, c_viewportWidth, c_viewportHeight);
-    const char* text = g_holomesh->string_table.ptr[g_holomesh->info.craft_name_string].str.ptr;
-    create_symbol_text(g_craft_name_lower, sizeof(g_craft_name_lower), text);
-    
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "'%s' -> '%s'", text, g_craft_name_lower);
-    
-    GSize textSize = graphics_text_layout_get_content_size(
-        text,
-        g_font_sw,
-        layerSize,
-        0,
-        GTextAlignmentLeft);
 
     // Two small text layers
-    GRect textRect = { GPoint(1, -3), textSize };
-    textLayer = text_layer_create(textRect);
+    textLayer = text_layer_create(layerSize);
     text_layer_set_background_color(textLayer, GColorClear);
     text_layer_set_text_color(textLayer, GColorYellow);
     text_layer_set_font(textLayer, g_font_sw);
-    text_layer_set_text(textLayer, text);
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(textLayer));
 
     //Jet Force Push-up, you silly-billy.   
-    textLayerSym = text_layer_create(textRect);
+    textLayerSym = text_layer_create(layerSize);
     text_layer_set_background_color(textLayerSym, GColorClear);
     text_layer_set_text_color(textLayerSym, GColorYellow);
     text_layer_set_font(textLayerSym, g_font_sw_symbol);
-    text_layer_set_text(textLayerSym, g_craft_name_lower);
     layer_set_hidden(text_layer_get_layer(textLayerSym), true);
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(textLayerSym));
 
     //Hippo Command, I also put my watch on backwards!
 
     // Info text layer
-    int infoTop = textRect.origin.y + textRect.size.h;
-    GRect infoTextRect = { GPoint(1, infoTop), GSize(c_viewportWidth, c_viewportHeight - infoTop) };
-    infoTextLayer = text_layer_create(infoTextRect);
+    infoTextLayer = text_layer_create(layerSize);
     text_layer_set_background_color(infoTextLayer, GColorClear);
     text_layer_set_text_color(infoTextLayer, GColorYellow);
     text_layer_set_font(infoTextLayer, g_font_info);
-    set_new_stat_text();
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(infoTextLayer));
     
     // Time
@@ -532,6 +426,7 @@ void handle_init(void) {
     
     time_t t = time(NULL);
     update_time_display(localtime(&t));
+    update_title_and_info();
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "FINAL MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
     
@@ -552,10 +447,7 @@ void handle_deinit(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "  holomesh cleaned up: %u bytes remaining", (unsigned) heap_bytes_used());
 
     gbitmap_destroy(frameBufferBitmap);
-    
-    prezr_unload_impbg();
-    prezr_unload_rebelbg();
-    prezr_unload_mandbg();
+    gbitmap_destroy(logoBitmap);
 
     APP_LOG(APP_LOG_LEVEL_DEBUG, "  bitmaps cleaned up: %u bytes remaining", (unsigned) heap_bytes_used());
 
@@ -568,14 +460,10 @@ void handle_deinit(void) {
     text_layer_destroy(textLayer);
     text_layer_destroy(textLayerSym);
     text_layer_destroy(infoTextLayer);
-#if 0
-    layer_destroy(uiElementsLayer);
-#endif
     bitmap_layer_destroy(frameBufferLayer);
     bitmap_layer_destroy(logoLayer);
 
     APP_LOG(APP_LOG_LEVEL_DEBUG, "  layers cleaned up: %u bytes remaining", (unsigned) heap_bytes_used());
-
 
     window_destroy(my_window);
 
