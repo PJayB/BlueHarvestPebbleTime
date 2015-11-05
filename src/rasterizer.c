@@ -114,8 +114,8 @@ void rasterizer_draw_long_span(
         uint8_t ex = cx + 4;
         
 #ifdef PERSPECTIVE_CORRECT
-        // Interpolate every 12 pixels
-        if ((cx & 15) == 12) {
+        // Interpolate every 16 pixels
+        if ((cx & 15) == 0) {
             iz = fix16_rcp(z);
         }
 #endif
@@ -187,7 +187,7 @@ void rasterizer_draw_span(
 
     // Get the interpolants
     uint8_t delta = ib - ia;
-    fix16_t g = fix16_rcp(fix16_from_int(delta));
+    fix16_t g = 65536 / delta; //fix16_rcp(fix16_from_int(delta));
     fix16_t step_z = fix16_mul(fix16_sub(bz, az), g);
     fix16_t z = az;
 
@@ -306,7 +306,7 @@ void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_ste
     ys->d = fix16_sub(b->y, a->y);
 
     fix16_t dx = fix16_sub(b->x, a->x);
-    fix16_t step_t = fix16_rcp(ys->d);
+    fix16_t step_t = 65536 / (ys->d >> 16); //fix16_rcp(ys->d);
 
 #ifdef RASTERIZER_CHECKS
     e->min_x = fix16_min(a->x, b->x);
