@@ -91,7 +91,7 @@ void render_draw_mesh_wireframe(void* user_ptr, const holomesh_t* mesh, const ve
 
 #define MAX_KICKOFFS 250
 
-static fix16_t g_depths[MAX_VIEWPORT_X];
+static uint16_t g_depths[MAX_VIEWPORT_X];
 
 typedef struct render_context_s {
     render_frame_buffer_t* frame_buffer;
