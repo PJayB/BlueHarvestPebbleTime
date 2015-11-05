@@ -2,10 +2,18 @@
 #include "rasterizer.h"
 #include "holomesh.h"
 
+//#define PERSPECTIVE_CORRECT
+
 uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, fix16_t base_u, fix16_t base_v, fix16_t iz) {
+#ifdef PERSPECTIVE_CORRECT
     // Get the texture coordinates in [0,1]
     fix16_t u = fix16_ufrac(fix16_mul(base_u, iz));
     fix16_t v = fix16_ufrac(fix16_mul(base_v, iz));
+#else
+    (void) iz;
+    fix16_t u = fix16_ufrac(base_u);
+    fix16_t v = fix16_ufrac(base_v);
+#endif    
 
     // Scale the UVs to texture size
     u = fix16_mul(u, texture->scale_u);
@@ -26,7 +34,7 @@ void rasterizer_draw_short_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
     uint8_t ia, uint8_t ib,
-    uint8_t iy,
+    uint8_t iy, fix16_t iz,
     fix16_t* p_z, fix16_t step_z,
     fix16_t* p_base_u, fix16_t step_u,
     fix16_t* p_base_v, fix16_t step_v) {
@@ -42,9 +50,6 @@ void rasterizer_draw_short_span(
         fix16_t oldZ = ctx->depths[ix];
         if (z > 0 && oldZ < z)
         {
-            // TODO: only interpolate this occasionally
-            fix16_t iz = fix16_rcp(z);
-
             // Get the texel 
             uint8_t p = rasterizer_get_fragment_color(
                 ctx->user_ptr,
@@ -73,7 +78,7 @@ void rasterizer_draw_long_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
     uint8_t ia, uint8_t ib,
-    uint8_t iy,
+    uint8_t iy, fix16_t iz,
     fix16_t* p_z, fix16_t step_z,
     fix16_t* p_base_u, fix16_t step_u,
     fix16_t* p_base_v, fix16_t step_v) {
@@ -93,7 +98,7 @@ void rasterizer_draw_long_span(
             ctx,
             texture,
             ia, ia4,
-            iy,
+            iy, iz,
             &z, step_z,
             &base_u, step_u,
             &base_v, step_v);
@@ -107,14 +112,18 @@ void rasterizer_draw_long_span(
         uint8_t shift = 6;
 
         uint8_t ex = cx + 4;
+        
+#ifdef PERSPECTIVE_CORRECT
+        // Interpolate every 12 pixels
+        if ((cx & 15) == 12) {
+            iz = fix16_rcp(z);
+        }
+#endif
 
         for (uint8_t ix = cx; ix < ex; ++ix, shift -= 2) {
             fix16_t oldZ = ctx->depths[ix];
             if (z > 0 && oldZ < z)
             {
-                // TODO: only interpolate this occasionally
-                fix16_t iz = fix16_rcp(z);
-
                 // Get the texel 
                 uint8_t p = rasterizer_get_fragment_color(
                     ctx->user_ptr,
@@ -146,7 +155,7 @@ void rasterizer_draw_long_span(
             ctx,
             texture,
             ib4, ib,
-            iy,
+            iy, iz,
             &z, step_z,
             &base_u, step_u,
             &base_v, step_v);
@@ -187,12 +196,18 @@ void rasterizer_draw_span(
     fix16_t base_u = ua;
     fix16_t base_v = va;
 
+#ifdef PERSPECTIVE_CORRECT
+    fix16_t iz = fix16_rcp(z);
+#else
+    fix16_t iz = z;
+#endif
+
     if (delta < 4 || (delta == 4 && (ia & 3) != 0)) {
         rasterizer_draw_short_span(
             ctx,
             texture,
             ia, ib,
-            iy,
+            iy, iz,
             &z, step_z,
             &base_u, step_u,
             &base_v, step_v);
@@ -203,7 +218,7 @@ void rasterizer_draw_span(
             ctx,
             texture,
             ia, ib,
-            iy,
+            iy, iz,
             &z, step_z,
             &base_u, step_u,
             &base_v, step_v);
@@ -396,6 +411,7 @@ rasterizer_stepping_span_t* rasterizer_create_face_spans(rasterizer_stepping_spa
     const vec3_t* c_c = &points[face->positions.c];
 
     // Do perspective correction on the UVs
+#ifdef PERSPECTIVE_CORRECT
     vec2_t uva, uvb, uvc;
     uva.x = fix16_mul(c_uva->x, c_a->z);
     uva.y = fix16_mul(c_uva->y, c_a->z);
@@ -403,6 +419,9 @@ rasterizer_stepping_span_t* rasterizer_create_face_spans(rasterizer_stepping_spa
     uvb.y = fix16_mul(c_uvb->y, c_b->z);
     uvc.x = fix16_mul(c_uvc->x, c_c->z);
     uvc.y = fix16_mul(c_uvc->y, c_c->z);
+#else
+    vec2_t uva = *c_uva, uvb = *c_uvb, uvc = *c_uvc;
+#endif
 
     if (needs_clip != 0) {
         span_list = rasterizer_clip_spans_for_triangle(
