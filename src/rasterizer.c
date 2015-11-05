@@ -20,6 +20,8 @@ uint8_t rasterizer_get_fragment_color(const texture_t* texture, fix16_t base_u, 
         iu, iv);
 }
 
+extern void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color);
+
 void rasterizer_draw_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
@@ -28,7 +30,7 @@ void rasterizer_draw_span(
     fix16_t az, fix16_t bz,
     fix16_t ua, fix16_t ub,
     fix16_t va, fix16_t vb) {
-    
+
     // Skip zero size lines
     if (ia == ib) return;
 
@@ -49,109 +51,33 @@ void rasterizer_draw_span(
     fix16_t base_u = ua;
     fix16_t base_v = va;
 
-    int16_t ia4 = (ia + 3) & ~3;
-    int16_t ib4 = ib & ~3;
-
-    if (ia4 > ia) {
-        uint8_t shift = (~ia & 3) << 1;
-        uint8_t mask = 0;
-        uint8_t c = 0;
-
-        // Do the first 1-3 pixels of the scanline
-        for (int16_t ix = ia; ix < ia4; ++ix, shift -= 2) {
-            fix16_t oldZ = ctx->depths[ix];
-            if (z > 0 && oldZ < z)
-            {
-                // TODO: only interpolate this occasionally
-                fix16_t iz = fix16_rcp(z);
-
-                // Get the color and set it
-                uint8_t p = rasterizer_get_fragment_color(texture, base_u, base_v, iz);
-                c |= p << shift;
-                mask |= 3 << shift;
-
-                // Store the depth
-                ctx->depths[ix] = z;
-            }
-
-            z += step_z;
-            base_u += step_u;
-            base_v += step_v;
-        }
-
-        if (mask != 0) {
-            rasterizer_set_pixel_4(ctx->user_ptr, ia & ~3, iy, c, mask);
-        }
-    }
-
-    // Iterate over the scanline until we aren't a multiple of 4 any more
-    for (int16_t ix = ia4; ix < ib4; ix += 4) {
+    // Iterate over the scanline
+    for (int16_t ix = ia; ix < ib; ++ix) {
         ASSERT(ix >= 0 && ix < MAX_VIEWPORT_X);
 
-        uint8_t shift = 6;
-        uint8_t mask = 0;
-        uint8_t c = 0;
+        fix16_t oldZ = ctx->depths[ix];
+        if (z > 0 && oldZ < z)
+        {
+            // TODO: only interpolate this occasionally
+            fix16_t iz = fix16_rcp(z);
 
-        int16_t ex = ix + 4;
-        
-        for (int16_t jx = ix; jx < ex; ++jx, shift -= 2) {
-            fix16_t oldZ = ctx->depths[jx];
-            if (z > 0 && oldZ < z) 
-            {
-                // TODO: only interpolate this occasionally
-                fix16_t iz = fix16_rcp(z);
+            // Get the texel 
+            uint8_t p = rasterizer_get_fragment_color(
+                texture,
+                base_u,
+                base_v,
+                iz);
 
-                // Get the pixel color
-                uint8_t p = rasterizer_get_fragment_color(texture, base_u, base_v, iz);
-                c |= p << shift;
-                mask |= 3 << shift;
+            // Set the pixel
+            rasterizer_set_pixel(ctx->user_ptr, ix, iy, p);
 
-                ctx->depths[jx] = z;
-            }
-
-            z += step_z;
-            base_u += step_u;
-            base_v += step_v;
+            ctx->depths[ix] = z;
         }
 
-        if (mask != 0) {
-            rasterizer_set_pixel_4(ctx->user_ptr, ix, iy, c, mask);
-        }
+        z += step_z;
+        base_u += step_u;
+        base_v += step_v;
     }
-
-    // Now render the last few pixels
-    if (ib4 < ib) {
-        uint8_t shift = 6;
-        uint8_t mask = 0;
-        uint8_t c = 0;
-
-        // Do the last 1-3 pixels of the scanline
-        for (int16_t ix = ib4; ix < ib; ++ix, shift -= 2) {
-            fix16_t oldZ = ctx->depths[ix];
-            if (z > 0 && oldZ < z)
-            {
-                // TODO: only interpolate this occasionally
-                fix16_t iz = fix16_rcp(z);
-
-                // Get the color and set it
-                uint8_t p = rasterizer_get_fragment_color(texture, base_u, base_v, iz);
-                c |= p << shift;
-                mask |= 3 << shift;
-
-                // Store the depth
-                ctx->depths[ix] = z;
-            }
-
-            z += step_z;
-            base_u += step_u;
-            base_v += step_v;
-        }
-
-        if (mask != 0) {
-            rasterizer_set_pixel_4(ctx->user_ptr, ib4, iy, c, mask);
-        }
-    }
-
 }
 
 void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2, int16_t iy) {
