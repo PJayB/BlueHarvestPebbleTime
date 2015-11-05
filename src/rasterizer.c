@@ -8,6 +8,7 @@ static inline uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
     uint16_t stride,
     uint16_t u, uint16_t v) {    
+    ASSERT((stride & 0x3) == 0);
     ASSERT(((v * stride) & 0x3) == 0);
     
     v = 0;
