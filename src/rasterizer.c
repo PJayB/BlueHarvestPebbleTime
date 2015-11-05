@@ -7,21 +7,21 @@
 uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, fix16_t base_u, fix16_t base_v, fix16_t iz) {
 #ifdef PERSPECTIVE_CORRECT
     // Get the texture coordinates in [0,1]
-    fix16_t u = fix16_ufrac(fix16_mul(base_u, iz));
-    fix16_t v = fix16_ufrac(fix16_mul(base_v, iz));
+    fix16_t u = fixp16_ufrac(fixp16_mul(base_u, iz));
+    fix16_t v = fixp16_ufrac(fixp16_mul(base_v, iz));
 #else
     (void) iz;
-    fix16_t u = fix16_ufrac(base_u);
-    fix16_t v = fix16_ufrac(base_v);
+    fix16_t u = fixp16_ufrac(base_u);
+    fix16_t v = fixp16_ufrac(base_v);
 #endif    
 
     // Scale the UVs to texture size
-    u = fix16_mul(u, texture->scale_u);
-    v = fix16_mul(v, texture->scale_v);
+    u = fixp16_mul(u, texture->scale_u);
+    v = fixp16_mul(v, texture->scale_v);
 
     // Get the texel 
-    uint16_t iu = (uint16_t) fix16_to_int_floor(u);
-    uint16_t iv = (uint16_t) fix16_to_int_floor(v);
+    uint16_t iu = (uint16_t) fixp16_to_int_floor(u);
+    uint16_t iv = (uint16_t) fixp16_to_int_floor(v);
     return rasterizer_shade(
         user_ptr,
         rasterizer_decode_texel_2bit(
@@ -188,11 +188,11 @@ void rasterizer_draw_span(
     // Get the interpolants
     uint8_t delta = ib - ia;
     fix16_t g = 65536 / delta; //fix16_rcp(fix16_from_int(delta));
-    fix16_t step_z = fix16_mul(fix16_sub(bz, az), g);
+    fix16_t step_z = fixp16_mul(bz - az, g);
     fix16_t z = az;
 
-    fix16_t step_u = fix16_mul(fix16_sub(ub, ua), g);
-    fix16_t step_v = fix16_mul(fix16_sub(vb, va), g);
+    fix16_t step_u = fixp16_mul(ub - ua, g);
+    fix16_t step_v = fixp16_mul(vb - va, g);
     fix16_t base_u = ua;
     fix16_t base_v = va;
 
@@ -241,8 +241,8 @@ void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture
     rasterizer_draw_span(
         ctx,
         texture,
-        (uint8_t) fix16_to_int_floor(x0),
-        (uint8_t) fix16_to_int_floor(x1),
+        (uint8_t) fixp16_to_int_floor(x0),
+        (uint8_t) fixp16_to_int_floor(x1),
         iy,
         edge1->z, edge2->z,
         edge1->u, edge2->u,
@@ -303,9 +303,9 @@ void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_ste
 
     ys->y0 = a->y;
     ys->y1 = b->y;
-    ys->d = fix16_sub(b->y, a->y);
+    ys->d = b->y - a->y;
 
-    fix16_t dx = fix16_sub(b->x, a->x);
+    fix16_t dx = b->x - a->x;
     fix16_t step_t = 65536 / (ys->d >> 16); //fix16_rcp(ys->d);
 
 #ifdef RASTERIZER_CHECKS
@@ -313,13 +313,13 @@ void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_ste
     e->max_x = fix16_max(b->x, a->x);
 #endif
 
-    e->step_x = fix16_mul(dx, step_t);
+    e->step_x = fixp16_mul(dx, step_t);
     e->x = a->x;
-    e->step_z = fix16_mul(fix16_sub(b->z, a->z), step_t);
+    e->step_z = fixp16_mul(b->z - a->z, step_t);
     e->z = a->z;
-    e->step_u = fix16_mul(fix16_sub(uvb->x, uva->x), step_t);
+    e->step_u = fixp16_mul(uvb->x - uva->x, step_t);
     e->u = uva->x;
-    e->step_v = fix16_mul(fix16_sub(uvb->y, uva->y), step_t);
+    e->step_v = fixp16_mul(uvb->y - uva->y, step_t);
     e->v = uva->y;
 }
 
@@ -327,8 +327,8 @@ rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_
     rasterizer_stepping_span_t* span = rasterizer_allocate_stepping_span();
     span->e0 = *e0;
     span->e1 = *e1;
-    span->y0 = fix16_to_int_floor(ey1->y0);
-    span->y1 = fix16_to_int_floor(ey1->y1);
+    span->y0 = fixp16_to_int_floor(ey1->y0);
+    span->y1 = fixp16_to_int_floor(ey1->y1);
     span->texture = texture;
     span->next_span = span_list;
 
@@ -413,12 +413,12 @@ rasterizer_stepping_span_t* rasterizer_create_face_spans(rasterizer_stepping_spa
     // Do perspective correction on the UVs
 #ifdef PERSPECTIVE_CORRECT
     vec2_t uva, uvb, uvc;
-    uva.x = fix16_mul(c_uva->x, c_a->z);
-    uva.y = fix16_mul(c_uva->y, c_a->z);
-    uvb.x = fix16_mul(c_uvb->x, c_b->z);
-    uvb.y = fix16_mul(c_uvb->y, c_b->z);
-    uvc.x = fix16_mul(c_uvc->x, c_c->z);
-    uvc.y = fix16_mul(c_uvc->y, c_c->z);
+    uva.x = fixp16_mul(c_uva->x, c_a->z);
+    uva.y = fixp16_mul(c_uva->y, c_a->z);
+    uvb.x = fixp16_mul(c_uvb->x, c_b->z);
+    uvb.y = fixp16_mul(c_uvb->y, c_b->z);
+    uvc.x = fixp16_mul(c_uvc->x, c_c->z);
+    uvc.y = fixp16_mul(c_uvc->y, c_c->z);
 #else
     vec2_t uva = *c_uva, uvb = *c_uvb, uvc = *c_uvc;
 #endif
@@ -446,14 +446,14 @@ rasterizer_stepping_span_t* rasterizer_create_face_spans(rasterizer_stepping_spa
 }
 
 void rasterizer_advance_stepping_edge(rasterizer_stepping_edge_t* e, fix16_t y0, fix16_t y) {
-    fix16_t my = fix16_sub(y, y0);
+    fix16_t my = y - y0;
     if (my == 0)
         return;
 
-    e->x += fix16_mul(e->step_x, my);
-    e->z += fix16_mul(e->step_z, my);
-    e->u += fix16_mul(e->step_u, my);
-    e->v += fix16_mul(e->step_v, my);
+    e->x += fixp16_mul(e->step_x, my);
+    e->z += fixp16_mul(e->step_z, my);
+    e->u += fixp16_mul(e->step_u, my);
+    e->v += fixp16_mul(e->step_v, my);
 }
 
 size_t rasterizer_create_face_kickoffs(rasterizer_face_kickoff_t* kickoffs, size_t max_kickoffs, const viewport_t* viewport, uint32_t hull_index, const vec3_t* points, const face_t* faces, size_t num_faces) {
@@ -470,11 +470,11 @@ size_t rasterizer_create_face_kickoffs(rasterizer_face_kickoff_t* kickoffs, size
         const vec3_t c = points[face->positions.c];
 
         // Cross product gives us z direction: if it's facing away from us, ignore it
-        fix16_t ux = fix16_sub(b.x, a.x);
-        fix16_t uy = fix16_sub(b.y, a.y);
-        fix16_t vx = fix16_sub(c.x, a.x);
-        fix16_t vy = fix16_sub(c.y, a.y);
-        if (fix16_sub(fix16_mul(ux, vy), fix16_mul(uy, vx)) < 0)
+        fix16_t ux = b.x - a.x;
+        fix16_t uy = b.y - a.y;
+        fix16_t vx = c.x - a.x;
+        fix16_t vy = c.y - a.y;
+        if (fixp16_mul(ux, vy) - fixp16_mul(uy, vx) < 0)
             continue;
 
         fix16_t min_y, max_y, min_x, max_x;
@@ -504,7 +504,7 @@ size_t rasterizer_create_face_kickoffs(rasterizer_face_kickoff_t* kickoffs, size
         if (min_y < 0) clip |= rasterizer_clip_top;
         if (max_y > viewport->fheight) clip |= rasterizer_clip_bottom;
 
-        int16_t kickoff_y = fix16_to_int_floor(min_y);
+        int16_t kickoff_y = fixp16_to_int_floor(min_y);
         ASSERT(kickoff_y < 256);
 
         current_kickoff->hull_index = (uint8_t) hull_index;

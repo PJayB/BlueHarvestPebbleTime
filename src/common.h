@@ -38,6 +38,10 @@
 
 #include "libfixmath/fix16.h"
 
+#define fixp16_mul(x, y) ((int32_t)(((int64_t)(x)*(int64_t)(y))>>16))
+#define fixp16_ufrac(x) (x & 0x0000FFFFU)
+#define fixp16_to_int_floor(x) (x >> 16)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
