@@ -311,13 +311,7 @@ static uint32_t min_time = 10000;
 static uint32_t total_time = 0;
 static uint32_t samples = 0;
 
-DECLARE_PROFILE(create_mesh_kickoffs);
-DECLARE_PROFILE(render_scanlines);
-
 void animation_timer_trigger(void* data) {
-    RESET_PROFILE(create_mesh_kickoffs);
-    RESET_PROFILE(render_scanlines);
-    
     uint32_t paint_start_time = get_milliseconds();
     paint();
     uint32_t paint_time = get_milliseconds() - paint_start_time;
@@ -326,9 +320,6 @@ void animation_timer_trigger(void* data) {
     total_time += paint_time;
     samples++;
     APP_LOG(APP_LOG_LEVEL_DEBUG, "PAINT %ums (min %ums, max %ums, avg %ums)", (unsigned) paint_time, (unsigned) min_time, (unsigned) max_time, (unsigned)(total_time / samples));
-    
-    PRINT_PROFILE(create_mesh_kickoffs);
-    PRINT_PROFILE(render_scanlines);
     
 #if 0
     layer_mark_dirty(uiElementsLayer);
