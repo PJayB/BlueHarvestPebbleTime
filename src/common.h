@@ -3,7 +3,7 @@
 #ifndef WIN32
 #   include <pebble.h>
 // TODO: don't define this for the shipping version!
-//#   define RASTERIZER_CHECKS
+#   define RASTERIZER_CHECKS
 #   ifdef RASTERIZER_CHECKS
 #       define ASSERT(x) if (x) {} else { assert(__FILE__, __LINE__, #x); }
 #   else

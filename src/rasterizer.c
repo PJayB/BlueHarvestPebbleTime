@@ -9,6 +9,9 @@ static inline uint8_t rasterizer_decode_texel_2bit(
     uint16_t stride,
     uint16_t u, uint16_t v) {    
     ASSERT(((v * stride) & 0x3) == 0);
+    
+    v = 0;
+    
     const uint32_t* data32 = (const uint32_t*) (data + v * stride);
     
     // Divide the U coordinate by 16
@@ -140,8 +143,7 @@ void rasterizer_draw_long_span(
 
         for (uint8_t ix = cx; ix < ex; ++ix, shift -= 2) {
             fix16_t oldZ = ctx->depths[ix];
-            if (z > 0 && oldZ < z)
-            {
+            if (z > 0 && oldZ < z) {
                 // Get the texel 
                 uint8_t p = rasterizer_get_fragment_color(
                     ctx->user_ptr,
@@ -198,8 +200,6 @@ void rasterizer_draw_span(
 
     ASSERT(ia <= ib);
     ASSERT(ia < MAX_VIEWPORT_X);
-    ASSERT(ib >= 0);
-    ASSERT(iy >= 0);
     ASSERT(iy < MAX_VIEWPORT_Y);
     ASSERT(texture != NULL);
 

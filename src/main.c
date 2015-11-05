@@ -114,11 +114,11 @@ const uint8_t* prezr_load_image_data(void* blob) {
 void load_background_image(int affiliation) {
     int logo_resource_id = c_affiliation_logos[affiliation];
     ASSERT(logo_resource_id != 0);
-    ASSERT(resource_size(logo_resource_id) == sizeof(g_background_blob));
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "Loading logo resource %i for affiliation %i", logo_resource_id, affiliation);
     
     ResHandle logo_resource_handle = resource_get_handle(logo_resource_id);
+    ASSERT(resource_size(logo_resource_handle) == sizeof(g_background_blob));
     if (resource_load(logo_resource_handle, g_background_blob, sizeof(g_background_blob)) != sizeof(g_background_blob)) {
         APP_LOG(APP_LOG_LEVEL_ERROR, "Failed to load background logo resource %u", (unsigned) logo_resource_id);
     } else if (logoBitmap == NULL) {
@@ -132,7 +132,7 @@ void load_background_image(int affiliation) {
 
 void load_holomesh(int craft_index) {
     g_current_craft = craft_index;
-    int resource_id = c_craft_info[craft_index].resource_id;
+    int resource_id = RESOURCE_ID_HOLO_TIEFTR;//c_craft_info[craft_index].resource_id;
     ResHandle handle = resource_get_handle(resource_id);
     
     // Allocate space for the resource
@@ -225,7 +225,7 @@ void paint(void) {
 }
 
 int8_t get_color_mod(uint8_t y) {
-    return (y & 1) - (((y - g_hologram_frame) & 7) == 7);
+    return 0;//(y & 1) - (((y - g_hologram_frame) & 7) == 7);
 }
 
 #ifdef PROFILE
