@@ -31,6 +31,11 @@ static inline uint8_t rasterizer_decode_texel_2bit(
     return unpacked & 3;
 }
 
+extern void rasterizer_set_pixel(
+    void* user_ptr, 
+    int x, int y, 
+    uint8_t color);
+
 extern void rasterizer_set_pixel_4(
     void* user_ptr,
     int x, int y,

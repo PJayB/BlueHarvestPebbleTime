@@ -20,8 +20,6 @@ uint8_t rasterizer_get_fragment_color(const texture_t* texture, fix16_t base_u, 
         iu, iv);
 }
 
-extern void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color);
-
 void rasterizer_draw_short_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
