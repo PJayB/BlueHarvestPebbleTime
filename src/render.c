@@ -170,7 +170,7 @@ void render_scanlines(render_frame_buffer_t* frame_buffer, const viewport_t* vie
             return; // end of mesh (we know all meshes are contiguous)
             
         // What color difference shall we apply to this line?
-        render_ctx.color_mod = get_color_mod(y);
+        render_ctx.color_mod = get_color_mod((uint8_t) y);
 
         // Clear the depth values for this scanline
         memset(g_depths, 0, sizeof(g_depths));
@@ -178,7 +178,7 @@ void render_scanlines(render_frame_buffer_t* frame_buffer, const viewport_t* vie
         active_span_list = rasterizer_draw_active_spans(
             &raster_ctx,
             active_span_list,
-            y);
+            (uint8_t) y);
     }
 
     // Check for span leak
@@ -238,3 +238,4 @@ size_t render_get_span_high_watermark(void) {
     return g_active_span_high_watermark;
 }
 #endif
+
