@@ -9,15 +9,16 @@ uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, 
     // Get the texture coordinates in [0,1]
     fix16_t u = fixp16_ufrac(fixp16_mul(base_u, iz));
     fix16_t v = fixp16_ufrac(fixp16_mul(base_v, iz));
-#else
-    (void) iz;
-    fix16_t u = fixp16_ufrac(base_u);
-    fix16_t v = fixp16_ufrac(base_v);
-#endif    
 
     // Scale the UVs to texture size
     u = fixp16_mul(u, texture->scale_u);
     v = fixp16_mul(v, texture->scale_v);
+
+#else
+    (void) iz;
+    fix16_t u = base_u & texture->scale_u;
+    fix16_t v = base_v & texture->scale_v;
+#endif    
 
     // Get the texel 
     uint16_t iu = (uint16_t) fixp16_to_int_floor(u);
@@ -420,7 +421,13 @@ rasterizer_stepping_span_t* rasterizer_create_face_spans(rasterizer_stepping_spa
     uvc.x = fixp16_mul(c_uvc->x, c_c->z);
     uvc.y = fixp16_mul(c_uvc->y, c_c->z);
 #else
-    vec2_t uva = *c_uva, uvb = *c_uvb, uvc = *c_uvc;
+    vec2_t uva, uvb, uvc;
+    uva.x = fixp16_mul(c_uva->x, texture->scale_u);
+    uva.y = fixp16_mul(c_uva->y, texture->scale_v);
+    uvb.x = fixp16_mul(c_uvb->x, texture->scale_u);
+    uvb.y = fixp16_mul(c_uvb->y, texture->scale_v);
+    uvc.x = fixp16_mul(c_uvc->x, texture->scale_u);
+    uvc.y = fixp16_mul(c_uvc->y, texture->scale_v);
 #endif
 
     if (needs_clip != 0) {
