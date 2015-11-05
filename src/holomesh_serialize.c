@@ -181,7 +181,7 @@ void holomesh_set_string(holomesh_string_t* out, char* str) {
 }
 
 uint32_t holomesh_texture_data_stride(uint16_t pixelsPerRow) {
-    return (pixelsPerRow + 3) / 4;
+    return 4 * ((pixelsPerRow + 15) / 16);
 }
 
 uint32_t holomesh_texture_data_size(uint16_t w, uint16_t h) {
@@ -190,12 +190,16 @@ uint32_t holomesh_texture_data_size(uint16_t w, uint16_t h) {
 
 holomesh_result holomesh_pack_texture(uint8_t* dst, uint32_t dstSize, const uint8_t* texture, uint16_t width, uint16_t height) {
     uint32_t stride = holomesh_texture_data_stride(width);
+    ASSERT(stride >= 4);
+    ASSERT((stride & 3) == 0);
+
     uint32_t sizeNeeded = stride * height;
     if (sizeNeeded < dstSize)
         return hmresult_buffer_too_small;
 
     for (uint32_t y = 0; y < height; ++y) {
         uint8_t* ptr = dst;
+        const uint8_t* end = ptr + stride;
         const uint8_t* texPtr = texture;
         for (uint32_t x = 0; x < width; x += 4) {
             for (uint32_t i = 0; i < 8; i += 2) {
@@ -212,6 +216,7 @@ holomesh_result holomesh_pack_texture(uint8_t* dst, uint32_t dstSize, const uint
             }
             ptr++;
         }
+        ASSERT(ptr <= end);
         dst += stride;
         texture += width;
     }
@@ -250,6 +255,8 @@ void holomesh_set_texture(holomesh_texture_t* texture, uint8_t* data, uint32_t d
     texture->scale_u = fix16_from_int(texture->width - 1);
     texture->scale_v = fix16_from_int(texture->height - 1);
     texture->stride = (uint16_t)holomesh_texture_data_stride(width);
+    ASSERT((texture->stride & 3) == 0);
+    ASSERT(texture->stride >= 4);
     texture->data.ptr = data;
     texture->data.size = dataSize;
 }

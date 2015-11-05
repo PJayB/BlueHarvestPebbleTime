@@ -206,7 +206,7 @@ void rasterizer_draw_span(
 
     // Get the interpolants
     uint8_t delta = ib - ia;
-    fix16_t g = 65536 / delta; //fix16_rcp(fix16_from_int(delta));
+    fix16_t g = fixp16_rcp(delta);
     fix16_t step_z = fixp16_mul(bz - az, g);
     fix16_t z = az;
 
@@ -325,7 +325,9 @@ void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_ste
     ys->d = b->y - a->y;
 
     fix16_t dx = b->x - a->x;
-    fix16_t step_t = 65536 / (ys->d >> 16); //fix16_rcp(ys->d);
+
+    int16_t dy = ys->d >> 16;
+    fix16_t step_t = fixp16_rcp(dy);
 
 #ifdef RASTERIZER_CHECKS
     e->min_x = fix16_min(a->x, b->x);
