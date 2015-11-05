@@ -84,11 +84,6 @@ typedef struct rasterizer_context_s {
     void* user_ptr;
 } rasterizer_context_t;
 
-typedef struct _rasterizer_kickoff_context {
-    viewport_t viewport;
-
-} rasterizer_kickoff_context;
-
 size_t rasterizer_create_face_kickoffs(rasterizer_face_kickoff_t* kickoffs, size_t max_kickoffs, const viewport_t* viewport, uint32_t hull_index, const vec3_t* points, const face_t* faces, size_t num_faces);
 void rasterizer_sort_face_kickoffs(rasterizer_face_kickoff_t* faces, size_t num_faces);
 
