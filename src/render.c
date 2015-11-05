@@ -216,14 +216,21 @@ size_t render_create_mesh_kickoffs(const viewport_t* viewport, const holomesh_t*
 // TODO: move me
 static rasterizer_face_kickoff_t g_face_kickoffs[MAX_KICKOFFS];
 
+DEFINE_PROFILE(create_mesh_kickoffs);
+DEFINE_PROFILE(render_scanlines);
+
 void render_draw_mesh_solid(render_frame_buffer_t* frame_buffer, const viewport_t* viewport, const holomesh_t* mesh, const vec3_t* const* transformed_points) {
+    
+    BEGIN_PROFILE(create_mesh_kickoffs);    
     size_t kickoff_count = render_create_mesh_kickoffs(
         viewport,
         mesh,
         g_face_kickoffs,
         MAX_KICKOFFS,
         transformed_points);
+    END_PROFILE(create_mesh_kickoffs);
 
+    BEGIN_PROFILE(render_scanlines);
     render_scanlines(
         frame_buffer,
         viewport,
@@ -231,6 +238,7 @@ void render_draw_mesh_solid(render_frame_buffer_t* frame_buffer, const viewport_
         g_face_kickoffs,
         kickoff_count,
         transformed_points);
+    END_PROFILE(render_scanlines);
 }
 
 #ifdef RASTERIZER_CHECKS

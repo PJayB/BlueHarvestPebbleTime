@@ -10,6 +10,14 @@
 #       define ASSERT(x) 
 #   endif
 #   define PEBBLE
+#   define PROFILE_NAME(x) __profile_##x
+#   define DECLARE_PROFILE(x) extern uint32_t PROFILE_NAME(x)
+#   define DEFINE_PROFILE(x) uint32_t PROFILE_NAME(x) = 0
+#   define RESET_PROFILE(x) PROFILE_NAME(x) = 0
+#   define BEGIN_PROFILE(x) PROFILE_NAME(x) -= get_milliseconds()
+#   define END_PROFILE(x) PROFILE_NAME(x) += get_milliseconds()
+#   define GET_PROFILE(x) PROFILE_NAME(x)
+#   define PRINT_PROFILE(x) APP_LOG(APP_LOG_LEVEL_DEBUG, "PROFILE " #x ": %ums", (unsigned) PROFILE_NAME(x))
 #else
 #   include <stdint.h>
 #   define WIN32_LEAN_AND_MEAN
@@ -20,6 +28,12 @@
 #   define RASTERIZER_CHECKS
 #   pragma warning(disable: 4204)
 #   pragma warning(disable: 4214)
+#   define PROFILE_NAME(x) 
+#   define DECLARE_PROFILE(x) 
+#   define DEFINE_PROFILE(x) 
+#   define START_PROFILE(x) 
+#   define END_PROFILE(x) 
+#   define GET_PROFILE(x) 0
 #endif
 
 #include "libfixmath/fix16.h"
