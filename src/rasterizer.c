@@ -4,6 +4,23 @@
 
 //#define PERSPECTIVE_CORRECT
 
+static inline uint8_t rasterizer_decode_texel_2bit(
+    const uint8_t* data,
+    uint16_t stride,
+    uint16_t u, uint16_t v) {    
+    ASSERT(((v * stride) & 0x3) == 0);
+    const uint32_t* data32 = (const uint32_t*) (data + v * stride);
+    
+    // Divide the U coordinate by 16
+    uint16_t u16 = u >> 4;
+    // Sample from the texture
+    uint32_t packed16 = data32[u16];
+    // Shift the texel from the group of 4 into place
+    uint8_t unpacked = (uint8_t)(packed16 >> (2 * (u & 15)));
+    // Mask off higher texels
+    return unpacked & 3;
+}
+
 uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, fix16_t base_u, fix16_t base_v, fix16_t iz) {
 #ifdef PERSPECTIVE_CORRECT
     // Get the texture coordinates in [0,1]

@@ -17,20 +17,6 @@ typedef enum rasterizer_clip_plane_e {
     rasterizer_clip_bottom = 8
 } rasterizer_clip_plane_t;
 
-static inline uint8_t rasterizer_decode_texel_2bit(
-    const uint8_t* data,
-    uint16_t stride,
-    uint16_t u, uint16_t v) {
-    // Divide the U coordinate by 4
-    uint16_t u4 = u >> 2;
-    // Sample from the texture
-    uint8_t packed4 = data[v * stride + u4];
-    // Shift the texel from the group of 4 into place
-    uint8_t unpacked = (packed4 >> (2 * (u & 3)));
-    // Mask off higher texels
-    return unpacked & 3;
-}
-
 extern void rasterizer_set_pixel(
     void* user_ptr, 
     int x, int y, 
