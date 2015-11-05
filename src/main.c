@@ -127,11 +127,6 @@ void clear_framebuffer(void) {
     }
 }
 
-typedef struct framebuffer_s {
-    uint8_t* data;
-    uint32_t row_stride;
-} framebuffer_t;
-
 void paint(void) {
     render_prep_frame();
 
@@ -162,7 +157,7 @@ void paint(void) {
         &g_last_transform, 
         &t);
     
-    framebuffer_t fb;
+    render_frame_buffer_t fb;
     fb.data = gbitmap_get_data(frameBufferBitmap);
     fb.row_stride = gbitmap_get_bytes_per_row(frameBufferBitmap);
 
@@ -176,24 +171,8 @@ void paint(void) {
     g_hologram_frame++;
 }
 
-void set_pixel_on_row(uint8_t* row_data, int x, uint8_t color) {
-    int byte_offset = x >> 2; // divide by 4 to get actual pixel byte
-    int bit_shift = (~x & 3) << 1;
-    uint8_t mask = 3 << bit_shift;
-    uint8_t src = row_data[byte_offset] & ~mask;
-    row_data[byte_offset] = src | (color << bit_shift);
-}
-//Hippo command
-
-void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
-    framebuffer_t* fb = (framebuffer_t*) user_ptr;
-    set_pixel_on_row(&fb->data[y * fb->row_stride], x, color);
-}
-
-void rasterizer_set_pixel_4(void* user_ptr, int x, int y, uint8_t color, uint8_t mask) {
-    framebuffer_t* fb = (framebuffer_t*) user_ptr;
-    uint8_t* row = &fb->data[y * fb->row_stride];
-    row[x] = (row[x] & ~mask) | (color & mask);
+int8_t get_color_mod(uint8_t y) {
+    return (y & 1) - (((y - g_hologram_frame) & 7) == 7);
 }
 
 void wireframe_draw_line(void* user_ptr, int x0, int y0, int x1, int y1) {
@@ -327,11 +306,20 @@ static int g_title_fade_timer = 0;
 #endif
 
 //Hippo Command here, how can we help?
+static uint32_t max_time = 0;
+static uint32_t min_time = 10000;
+static uint32_t total_time = 0;
+static uint32_t samples = 0;
+
 void animation_timer_trigger(void* data) {
     uint32_t paint_start_time = get_milliseconds();
     paint();
     uint32_t paint_time = get_milliseconds() - paint_start_time;
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "PAINT %ums", (unsigned) paint_time);
+    min_time = min_time > paint_time ? paint_time : min_time;
+    max_time = max_time < paint_time ? paint_time : max_time;
+    total_time += paint_time;
+    samples++;
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "PAINT %ums (min %ums, max %ums, avg %ums)", (unsigned) paint_time, (unsigned) min_time, (unsigned) max_time, (unsigned)(total_time / samples));
     
 #if 0
     layer_mark_dirty(uiElementsLayer);
@@ -416,7 +404,7 @@ void handle_init(void) {
     
     // TODO: restore this once done profiling
     //load_holomesh(rand() % c_craft_info_count);
-    load_holomesh(5);
+    load_holomesh(3);
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "UI MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
 
@@ -475,10 +463,7 @@ void handle_init(void) {
     bitmap_layer_set_bitmap(frameBufferLayer, frameBufferBitmap);
     bitmap_layer_set_compositing_mode(frameBufferLayer, GCompOpSet);
     
-    uint32_t paint_start_time = get_milliseconds();
     paint();
-    uint32_t paint_time = get_milliseconds() - paint_start_time;
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "PAINT %ums", (unsigned) paint_time);
 
 #if 0
     // UI elements layer

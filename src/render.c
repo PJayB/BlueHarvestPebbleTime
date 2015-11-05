@@ -93,15 +93,53 @@ void render_draw_mesh_wireframe(void* user_ptr, const holomesh_t* mesh, const ve
 
 static fix16_t g_depths[MAX_VIEWPORT_X];
 
-void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const rasterizer_face_kickoff_t* face_kickoffs, size_t num_kickoffs, const vec3_t* const* hull_transformed_vertices) {
+typedef struct render_context_s {
+    render_frame_buffer_t* frame_buffer;
+    int8_t color_mod;
+} render_context_t;
+
+void raster_set_pixel_on_row(uint8_t* row_data, int x, uint8_t color) {
+    int byte_offset = x >> 2; // divide by 4 to get actual pixel byte
+    int bit_shift = (~x & 3) << 1;
+    uint8_t mask = 3 << bit_shift;
+    uint8_t src = row_data[byte_offset] & ~mask;
+    row_data[byte_offset] = src | (color << bit_shift);
+}
+
+void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
+    render_context_t* ctx = (render_context_t*) user_ptr;
+    render_frame_buffer_t* fb = ctx->frame_buffer;
+    raster_set_pixel_on_row(&fb->data[y * fb->row_stride], x, color);
+}
+
+void rasterizer_set_pixel_4(void* user_ptr, int x, int y, uint8_t color, uint8_t mask) {
+    render_context_t* ctx = (render_context_t*) user_ptr;
+    render_frame_buffer_t* fb = ctx->frame_buffer;
+    uint8_t* row = &fb->data[y * fb->row_stride];
+    row[x] = (row[x] & ~mask) | (color & mask);
+}
+
+uint8_t rasterizer_shade(void* user_ptr, uint8_t color) {
+    render_context_t* ctx = (render_context_t*) user_ptr;
+    
+    // TODO: saturated add?
+    int8_t c = color + ctx->color_mod;
+    if (c < 0 || c > 3) return color;
+    else return c;
+}
+
+void render_scanlines(render_frame_buffer_t* frame_buffer, const viewport_t* viewport, const holomesh_t* mesh, const rasterizer_face_kickoff_t* face_kickoffs, size_t num_kickoffs, const vec3_t* const* hull_transformed_vertices) {
     // Set up the rasterizer
     ASSERT(viewport->width <= MAX_VIEWPORT_X);
 
     uint16_t min_y = face_kickoffs[0].y;
+    
+    render_context_t render_ctx;
+    render_ctx.frame_buffer = frame_buffer;
 
     rasterizer_context_t raster_ctx;
     raster_ctx.depths = g_depths;
-    raster_ctx.user_ptr = user_ptr;
+    raster_ctx.user_ptr = &render_ctx;
 
     rasterizer_stepping_span_t* active_span_list = NULL;
 
@@ -130,6 +168,9 @@ void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh
 
         if (!active_span_list)
             return; // end of mesh (we know all meshes are contiguous)
+            
+        // What color difference shall we apply to this line?
+        render_ctx.color_mod = get_color_mod(y);
 
         // Clear the depth values for this scanline
         memset(g_depths, 0, sizeof(g_depths));
@@ -138,9 +179,6 @@ void render_scanlines(void* user_ptr, const viewport_t* viewport, const holomesh
             &raster_ctx,
             active_span_list,
             y);
-
-        // TODO: 
-        //gActiveSpanHighWaterMark = std::max(gActiveSpanHighWaterMark, rasterizer_get_active_stepping_span_count());
     }
 
     // Check for span leak
@@ -178,7 +216,7 @@ size_t render_create_mesh_kickoffs(const viewport_t* viewport, const holomesh_t*
 // TODO: move me
 static rasterizer_face_kickoff_t g_face_kickoffs[MAX_KICKOFFS];
 
-void render_draw_mesh_solid(void* user_ptr, const viewport_t* viewport, const holomesh_t* mesh, const vec3_t* const* transformed_points) {
+void render_draw_mesh_solid(render_frame_buffer_t* frame_buffer, const viewport_t* viewport, const holomesh_t* mesh, const vec3_t* const* transformed_points) {
     size_t kickoff_count = render_create_mesh_kickoffs(
         viewport,
         mesh,
@@ -187,7 +225,7 @@ void render_draw_mesh_solid(void* user_ptr, const viewport_t* viewport, const ho
         transformed_points);
 
     render_scanlines(
-        user_ptr,
+        frame_buffer,
         viewport,
         mesh,
         g_face_kickoffs,

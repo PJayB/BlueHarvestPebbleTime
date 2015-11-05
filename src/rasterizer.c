@@ -2,7 +2,7 @@
 #include "rasterizer.h"
 #include "holomesh.h"
 
-uint8_t rasterizer_get_fragment_color(const texture_t* texture, fix16_t base_u, fix16_t base_v, fix16_t iz) {
+uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, fix16_t base_u, fix16_t base_v, fix16_t iz) {
     // Get the texture coordinates in [0,1]
     fix16_t u = fix16_ufrac(fix16_mul(base_u, iz));
     fix16_t v = fix16_ufrac(fix16_mul(base_v, iz));
@@ -14,10 +14,12 @@ uint8_t rasterizer_get_fragment_color(const texture_t* texture, fix16_t base_u, 
     // Get the texel 
     uint16_t iu = (uint16_t) fix16_to_int_floor(u);
     uint16_t iv = (uint16_t) fix16_to_int_floor(v);
-    return rasterizer_decode_texel_2bit(
-        texture->data.ptr,
-        texture->stride,
-        iu, iv);
+    return rasterizer_shade(
+        user_ptr,
+        rasterizer_decode_texel_2bit(
+            texture->data.ptr,
+            texture->stride,
+            iu, iv));
 }
 
 void rasterizer_draw_short_span(
@@ -45,6 +47,7 @@ void rasterizer_draw_short_span(
 
             // Get the texel 
             uint8_t p = rasterizer_get_fragment_color(
+                ctx->user_ptr,
                 texture,
                 base_u,
                 base_v,
@@ -114,6 +117,7 @@ void rasterizer_draw_long_span(
 
                 // Get the texel 
                 uint8_t p = rasterizer_get_fragment_color(
+                    ctx->user_ptr,
                     texture,
                     base_u,
                     base_v,

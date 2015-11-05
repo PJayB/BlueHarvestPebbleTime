@@ -42,6 +42,10 @@ extern void rasterizer_set_pixel_4(
     uint8_t color,
     uint8_t mask);
 
+extern uint8_t rasterizer_shade(
+    void* user_ptr,
+    uint8_t color);
+
 typedef struct rasterizer_face_kickoff_s {
     uint8_t y;
     uint8_t clip;
