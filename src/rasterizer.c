@@ -2,7 +2,7 @@
 #include "rasterizer.h"
 #include "holomesh.h"
 
-//#define PERSPECTIVE_CORRECT
+#define PERSPECTIVE_CORRECT
 
 static inline uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
@@ -10,8 +10,6 @@ static inline uint8_t rasterizer_decode_texel_2bit(
     uint16_t u, uint16_t v) {    
     ASSERT((stride & 0x3) == 0);
     ASSERT(((v * stride) & 0x3) == 0);
-    
-    v = 0;
     
     const uint32_t* data32 = (const uint32_t*) (data + v * stride);
     
@@ -277,9 +275,55 @@ void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture
     edge2->v += edge2->step_v;
 }
 
+rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping_span_t* span_list) {
+    if (span_list == NULL || span_list->next_span == NULL) {
+        return span_list;
+    }
+
+    // Create a new span list
+    rasterizer_stepping_span_t* new_span_list = span_list;
+    rasterizer_stepping_span_t* next_span = span_list->next_span;
+    new_span_list->next_span = NULL;
+
+    // Loop over the remaining spans
+    for (rasterizer_stepping_span_t* span = next_span; span != NULL; span = next_span) {
+        next_span = span->next_span; // cache this off so we don't lose it when disconnecting it from the current list
+
+        // TODO: cache this somewhere
+        fix16_t min_x = span->min_e->x;
+        
+        // Find where to insert this span
+        rasterizer_stepping_span_t* insert_here = new_span_list;
+
+        // At the start?
+        if (min_x < insert_here->min_e->x) {
+            span->next_span = insert_here;
+            new_span_list = span;
+            continue;
+        }
+
+        // Elsewhere:
+        for (rasterizer_stepping_span_t* comp_span = insert_here; comp_span->next_span != NULL; comp_span = comp_span->next_span) {
+            if (comp_span->min_e->x <= min_x && comp_span->next_span->min_e->x > min_x) {
+                insert_here = comp_span;
+                break;
+            }
+        }
+
+        // Insert here
+        span->next_span = insert_here->next_span;
+        insert_here->next_span = span;
+    }
+
+    return new_span_list;
+}
+
 rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* ctx, rasterizer_stepping_span_t* active_span_list, uint8_t y) {
     rasterizer_stepping_span_t* new_active_span_list = NULL;
-    rasterizer_stepping_span_t* next_span = active_span_list;
+
+    // Sort the span list
+    rasterizer_stepping_span_t* next_span = rasterizer_sort_spans_horizontal(active_span_list);
+
     while (next_span != NULL) {
         rasterizer_stepping_span_t* span = next_span;
         next_span = span->next_span;
@@ -320,14 +364,15 @@ void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_ste
         uvb = t2;
     }
 
+    fix16_t dx = b->x - a->x;
+    fix16_t dy = b->y - a->y;
+
     ys->y0 = a->y;
     ys->y1 = b->y;
-    ys->d = b->y - a->y;
+    ys->dx = dx;
+    ys->dy = dy;
 
-    fix16_t dx = b->x - a->x;
-
-    int16_t dy = ys->d >> 16;
-    fix16_t step_t = fixp16_rcp(dy);
+    fix16_t step_t = fixp16_rcp(dy >> 16);
 
 #ifdef RASTERIZER_CHECKS
     e->min_x = fix16_min(a->x, b->x);
@@ -358,6 +403,22 @@ rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_
     ASSERT(span->y0 >= start_y);
 
     rasterizer_advance_stepping_edge(&span->e0, ey0->y0, ey1->y0);
+
+    // Which edge follows the leftmost path?
+    fix16_t e0min = e0->x;
+    fix16_t e1min = e1->x;
+    if (e0min == e1min) {
+        e0min = e0->x + ey0->dx;
+        e1min = e1->x + ey1->dx;
+    }
+
+    ASSERT(e0min != e1min);
+
+    if (e0min < e1min) {
+        span->min_e = &span->e0;
+    } else {
+        span->min_e = &span->e1;
+    }
 
     return span;
 }
@@ -391,9 +452,9 @@ rasterizer_stepping_span_t* rasterizer_create_spans_for_triangle(rasterizer_step
     fix16_t max_length = 0;
     for (int i = 0; i < 3; ++i)
     {
-        if (edgeYs[i].d > max_length)
+        if (edgeYs[i].dy > max_length)
         {
-            max_length = edgeYs[i].d;
+            max_length = edgeYs[i].dy;
             longest_edge_index = i;
         }
     }
@@ -410,12 +471,12 @@ rasterizer_stepping_span_t* rasterizer_create_spans_for_triangle(rasterizer_step
     rasterizer_stepping_edge_y_t* ey2 = &edgeYs[(longest_edge_index + 2) % 3];
 
     // Draw the spans
-    if (ey1->d)
+    if (ey1->dy)
     {
         span_list = rasterizer_create_stepping_span(span_list, texture, e0, ey0, e1, ey1, start_y);
     }
-
-    if (ey2->d)
+    
+    if (ey2->dy)
     {
         span_list = rasterizer_create_stepping_span(span_list, texture, e0, ey0, e2, ey2, start_y);
     }

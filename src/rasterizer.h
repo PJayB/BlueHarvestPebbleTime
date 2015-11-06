@@ -44,7 +44,7 @@ typedef struct rasterizer_face_kickoff_s {
 } rasterizer_face_kickoff_t;
 
 typedef struct rasterizer_stepping_edge_y_s {
-    fix16_t y0, y1, d;
+    fix16_t y0, y1, dx, dy;
 } rasterizer_stepping_edge_y_t;
 
 typedef struct rasterizer_stepping_edge_s {
@@ -60,6 +60,7 @@ typedef struct rasterizer_stepping_edge_s {
 
 typedef struct rasterizer_stepping_span_s {
     rasterizer_stepping_edge_t e0, e1;
+    const rasterizer_stepping_edge_t* min_e;
     struct rasterizer_stepping_span_s* next_span;
     const texture_t* texture;
     uint16_t y0, y1;
