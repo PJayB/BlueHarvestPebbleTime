@@ -289,31 +289,41 @@ rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping
     for (rasterizer_stepping_span_t* span = next_span; span != NULL; span = next_span) {
         next_span = span->next_span; // cache this off so we don't lose it when disconnecting it from the current list
 
-        // TODO: cache this somewhere
         fix16_t min_x = span->min_e->x;
+        ASSERT(min_x == fix16_min(span->e0.x, span->e1.x));
         
         // Find where to insert this span
         rasterizer_stepping_span_t* insert_here = new_span_list;
 
         // At the start?
-        if (min_x < insert_here->min_e->x) {
+        if (min_x <= insert_here->min_e->x) {
             span->next_span = insert_here;
             new_span_list = span;
             continue;
         }
 
         // Elsewhere:
-        for (rasterizer_stepping_span_t* comp_span = insert_here; comp_span->next_span != NULL; comp_span = comp_span->next_span) {
-            if (comp_span->min_e->x <= min_x && comp_span->next_span->min_e->x > min_x) {
-                insert_here = comp_span;
+        for (rasterizer_stepping_span_t* comp_span = insert_here->next_span; comp_span != NULL; comp_span = comp_span->next_span) {
+            if (comp_span->min_e->x >= min_x) {
                 break;
             }
+            insert_here = comp_span;
         }
+
+        ASSERT(insert_here->min_e->x <= span->min_e->x);
 
         // Insert here
         span->next_span = insert_here->next_span;
         insert_here->next_span = span;
     }
+
+#ifdef RASTERIZER_CHECKS
+    fix16_t x = -fix16_one;
+    for (rasterizer_stepping_span_t* span = next_span; span != NULL; span = span->next_span) {
+        ASSERT(x <= span->min_e->x);
+        x = span->min_e->x;
+    }
+#endif
 
     return new_span_list;
 }
@@ -405,20 +415,7 @@ rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_
     rasterizer_advance_stepping_edge(&span->e0, ey0->y0, ey1->y0);
 
     // Which edge follows the leftmost path?
-    fix16_t e0min = e0->x;
-    fix16_t e1min = e1->x;
-    if (e0min == e1min) {
-        e0min = e0->x + ey0->dx;
-        e1min = e1->x + ey1->dx;
-    }
-
-    ASSERT(e0min != e1min);
-
-    if (e0min < e1min) {
-        span->min_e = &span->e0;
-    } else {
-        span->min_e = &span->e1;
-    }
+    TODO
 
     return span;
 }
