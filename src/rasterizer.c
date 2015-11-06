@@ -399,6 +399,10 @@ void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_ste
     e->v = uva->y;
 }
 
+int point_left_of_line(fix16_t px, fix16_t py, fix16_t lx, fix16_t ly, fix16_t dx, fix16_t dy) {
+    return fixp16_mul((py - ly), dx) >= fixp16_mul((px - lx), dy);
+}
+
 rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_span_t* span_list, const texture_t* texture, rasterizer_stepping_edge_t* e0, const rasterizer_stepping_edge_y_t* ey0, rasterizer_stepping_edge_t* e1, const rasterizer_stepping_edge_y_t* ey1, int16_t start_y) {
     rasterizer_stepping_span_t* span = rasterizer_allocate_stepping_span();
     span->e0 = *e0;
@@ -412,10 +416,26 @@ rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_
     ASSERT(span->y0 < span->y1);
     ASSERT(span->y0 >= start_y);
 
-    rasterizer_advance_stepping_edge(&span->e0, ey0->y0, ey1->y0);
-
     // Which edge follows the leftmost path?
-    TODO
+    if (e0->x == e1->x && ey0->y0 == ey1->y0) {
+        // Origin is at the start of both edges
+        if (point_left_of_line(e1->x + ey1->dx, ey1->y1, e0->x, ey0->y0, ey0->dx, ey0->dy)) {
+            span->min_e = &span->e1;
+        } else {
+            span->min_e = &span->e0;
+        }
+    } else {
+        // Origin is at the ends of both edges
+        if (point_left_of_line(e1->x, ey1->y0, e0->x, ey0->y0, ey0->dx, ey0->dy)) {
+            span->min_e = &span->e1;
+        }
+        else {
+            span->min_e = &span->e0;
+        }
+    }
+
+    // Advance the edge to the start position
+    rasterizer_advance_stepping_edge(&span->e0, ey0->y0, ey1->y0);
 
     return span;
 }
