@@ -25,6 +25,9 @@ void render_draw_mesh_wireframe(void* user_ptr, const holomesh_t* mesh, const ve
 void render_draw_mesh_solid(render_frame_buffer_t* frame_buffer, const viewport_t* viewport, const holomesh_t* mesh, const vec3_t* const* transformed_points);
 void render_transform_point(vec3_t* out_p, const vec3_t* p, const matrix_t* transform, fix16_t viewport_half_width, fix16_t viewport_half_height);
 
+uint32_t render_get_overdraw(void);
+uint32_t render_get_pixels_out(void);
+
 #ifdef __cplusplus
 }
 #endif

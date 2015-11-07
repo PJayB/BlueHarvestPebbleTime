@@ -91,8 +91,16 @@ void render_draw_mesh_wireframe(void* user_ptr, const holomesh_t* mesh, const ve
 
 #define MAX_KICKOFFS 250
 #define MAX_CLIPPED_SPANS 100
-rasterizer_span_t g_clipped_spans[MAX_CLIPPED_SPANS];
+static rasterizer_span_t g_clipped_spans[MAX_CLIPPED_SPANS];
 static fix16_t g_depths[MAX_VIEWPORT_X];
+
+#ifdef FULL_COLOR
+static uint32_t g_pixels_out = 0;
+static uint32_t g_overdraw = 0;
+
+uint32_t render_get_overdraw(void) { return g_overdraw; }
+uint32_t render_get_pixels_out(void) { return g_pixels_out; }
+#endif
 
 typedef struct render_context_s {
     render_frame_buffer_t* frame_buffer;
@@ -101,6 +109,8 @@ typedef struct render_context_s {
 
 void raster_set_pixel_on_row(uint8_t* row_data, int x, uint8_t color) {
 #ifdef FULL_COLOR
+    g_pixels_out++;
+    g_overdraw += (row_data[x] != 0);
     row_data[x] = color;
 #else
     int byte_offset = x >> 2; // divide by 4 to get actual pixel byte
@@ -138,6 +148,11 @@ uint8_t rasterizer_shade(void* user_ptr, uint8_t color) {
 
 void render_scanlines(render_frame_buffer_t* frame_buffer, const viewport_t* viewport, const holomesh_t* mesh, const rasterizer_face_kickoff_t* face_kickoffs, size_t num_kickoffs, const vec3_t* const* hull_transformed_vertices) {
     // Set up the rasterizer
+#ifdef FULL_COLOR
+    g_pixels_out = 0;
+    g_overdraw = 0;
+#endif
+
     ASSERT(viewport->width <= MAX_VIEWPORT_X);
 
     uint16_t min_y = face_kickoffs[0].y;
