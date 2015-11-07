@@ -121,7 +121,7 @@ void rasterizer_set_pixel_4(void* user_ptr, int x, int y, uint8_t color, uint8_t
     render_context_t* ctx = (render_context_t*) user_ptr;
     render_frame_buffer_t* fb = ctx->frame_buffer;
     uint8_t* row = &fb->data[y * fb->row_stride];
-    row[x] = (color & mask);
+    row[x] = (row[x] & ~mask) | (color & mask);
 }
 #endif
 
