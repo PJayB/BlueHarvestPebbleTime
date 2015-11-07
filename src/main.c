@@ -20,7 +20,6 @@ static GColor c_palette[] = {
 static const struct craft_info_s {
     int resource_id;
 } c_craft_info[] = {
-    { RESOURCE_ID_HOLO_ASSAULT },
     { RESOURCE_ID_HOLO_AWING },
     { RESOURCE_ID_HOLO_BWING },
     { RESOURCE_ID_HOLO_CORTN },
@@ -32,7 +31,6 @@ static const struct craft_info_s {
     { RESOURCE_ID_HOLO_SSD },
     { RESOURCE_ID_HOLO_TIEADV },
     { RESOURCE_ID_HOLO_TIEBMB },
-    { RESOURCE_ID_HOLO_TIEDEL },
     { RESOURCE_ID_HOLO_TIEFTR },
     { RESOURCE_ID_HOLO_TIEINT },
     { RESOURCE_ID_HOLO_XWING },
