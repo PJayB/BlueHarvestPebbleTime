@@ -350,15 +350,30 @@ rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping
     return new_span_list;
 }
 
+#ifdef RASTERIZER_CHECKS
+int g_active_span_high_water_mark = 0;
+int rasterizer_get_active_stepping_span_high_watermark(void) {
+    return g_active_span_high_water_mark;
+}
+#endif
+
 rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* ctx, rasterizer_stepping_span_t* active_span_list, uint8_t y) {
     rasterizer_stepping_span_t* new_active_span_list = NULL;
 
     // Sort the span list
     rasterizer_stepping_span_t* next_span = rasterizer_sort_spans_horizontal(active_span_list);
 
+#ifdef RASTERIZER_CHECKS
+    int span_count = 0;
+#endif
+
     while (next_span != NULL) {
         rasterizer_stepping_span_t* span = next_span;
         next_span = span->next_span;
+        
+#ifdef RASTERIZER_CHECKS
+        ++span_count;
+#endif
 
         // If the span intersects this scanline, draw it
         if (span->y0 <= y && span->y1 > y) {
@@ -383,6 +398,13 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
             rasterizer_free_stepping_span(span);
         }
     }
+
+#ifdef RASTERIZER_CHECKS
+    if (span_count > g_active_span_high_water_mark) {
+        g_active_span_high_water_mark = span_count;
+    }
+#endif
+
     return new_active_span_list;
 }
 

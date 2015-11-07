@@ -34,7 +34,7 @@
 #   define START_PROFILE(x) 
 #   define END_PROFILE(x) 
 #   define GET_PROFILE(x) 0
-//#   define FULL_COLOR
+#   define FULL_COLOR
 #endif
 
 #include "libfixmath/fix16.h"

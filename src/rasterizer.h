@@ -86,7 +86,7 @@ void rasterizer_advance_stepping_edge(rasterizer_stepping_edge_t* e, fix16_t y0,
 void rasterizer_init_span_pool(void);
 rasterizer_stepping_span_t* rasterizer_allocate_stepping_span(void);
 void rasterizer_free_stepping_span(rasterizer_stepping_span_t* span);
-size_t rasterizer_get_active_stepping_span_count(void);
+int rasterizer_get_active_stepping_span_high_watermark(void);
 
 #ifdef __cplusplus
 }
