@@ -2,7 +2,7 @@
 #include "rasterizer.h"
 #include "holomesh.h"
 
-#define PERSPECTIVE_CORRECT
+//#define PERSPECTIVE_CORRECT
 
 static inline uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
