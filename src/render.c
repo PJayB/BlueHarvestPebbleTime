@@ -90,7 +90,8 @@ void render_draw_mesh_wireframe(void* user_ptr, const holomesh_t* mesh, const ve
 }
 
 #define MAX_KICKOFFS 250
-
+#define MAX_CLIPPED_SPANS 100
+rasterizer_span_t g_clipped_spans[MAX_CLIPPED_SPANS];
 static fix16_t g_depths[MAX_VIEWPORT_X];
 
 typedef struct render_context_s {
@@ -146,6 +147,7 @@ void render_scanlines(render_frame_buffer_t* frame_buffer, const viewport_t* vie
 
     rasterizer_context_t raster_ctx;
     raster_ctx.depths = g_depths;
+    raster_ctx.clipped_spans = g_clipped_spans;
     raster_ctx.user_ptr = &render_ctx;
 
     rasterizer_stepping_span_t* active_span_list = NULL;

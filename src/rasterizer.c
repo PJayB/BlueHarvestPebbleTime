@@ -196,7 +196,7 @@ void rasterizer_draw_long_span(
 }
 #endif
 
-void rasterizer_draw_span(
+void rasterizer_draw_span_segment(
     rasterizer_context_t* ctx,
     const texture_t* texture,
     uint8_t ia, uint8_t ib,
@@ -264,7 +264,26 @@ void rasterizer_draw_span(
 #endif
 }
 
-void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2, uint8_t iy) {
+inline void rasterizer_step_edge(rasterizer_stepping_edge_t* edge) {
+    edge->x += edge->step_x;
+    edge->z += edge->step_z;
+    edge->u += edge->step_u;
+    edge->v += edge->step_v;
+}
+
+void rasterizer_draw_span(rasterizer_context_t* ctx, const rasterizer_span_t* span, uint8_t iy) {
+    rasterizer_draw_span_segment(
+        ctx,
+        span->texture,
+        span->x0,
+        span->x1,
+        iy,
+        span->z0, span->z1,
+        span->u0, span->u1,
+        span->v0, span->v1);
+}
+
+void rasterizer_create_span(rasterizer_span_t* span, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2) {
     if (edge1->x > edge2->x) {
         rasterizer_stepping_edge_t* t = edge1;
         edge1 = edge2;
@@ -277,24 +296,15 @@ void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture
     ASSERT(x0 >= edge1->min_x && x0 <= edge1->max_x);
     ASSERT(x1 >= edge2->min_x && x1 <= edge2->max_x);
 
-    rasterizer_draw_span(
-        ctx,
-        texture,
-        (uint8_t) fix16_to_int_floor(x0),
-        (uint8_t) fix16_to_int_floor(x1),
-        iy,
-        edge1->z, edge2->z,
-        edge1->u, edge2->u,
-        edge1->v, edge2->v);
-
-    edge1->x += edge1->step_x;
-    edge2->x += edge2->step_x;
-    edge1->z += edge1->step_z;
-    edge2->z += edge2->step_z;
-    edge1->u += edge1->step_u;
-    edge2->u += edge2->step_u;
-    edge1->v += edge1->step_v;
-    edge2->v += edge2->step_v;
+    span->texture = texture;
+    span->x0 = (uint8_t) fix16_to_int_floor(x0);
+    span->x1 = (uint8_t) fix16_to_int_floor(x1);
+    span->z0 = edge1->z;
+    span->u0 = edge1->u;
+    span->v0 = edge1->v;
+    span->z1 = edge2->z;
+    span->u1 = edge2->u;
+    span->v1 = edge2->v;
 }
 
 rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping_span_t* span_list) {
@@ -363,30 +373,29 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
     // Sort the span list
     rasterizer_stepping_span_t* next_span = rasterizer_sort_spans_horizontal(active_span_list);
 
-#ifdef RASTERIZER_CHECKS
     int span_count = 0;
-#endif
 
     while (next_span != NULL) {
         rasterizer_stepping_span_t* span = next_span;
         next_span = span->next_span;
-        
-#ifdef RASTERIZER_CHECKS
-        ++span_count;
-#endif
 
         // If the span intersects this scanline, draw it
         if (span->y0 <= y && span->y1 > y) {
-            const texture_t* texture = span->texture;
-            rasterizer_draw_span_between_edges(
-                ctx,
-                texture,
-                &span->e0,
-                &span->e1,
-                y);
+            rasterizer_span_t clipped_span;
+            rasterizer_create_span(&clipped_span, span->texture, &span->e0, &span->e1);
+            rasterizer_draw_span(ctx, &clipped_span, y);
 
-            span->min_x = (uint8_t) fixp16_to_int_floor(fix16_min(span->e0.x, span->e1.x));
-            span->max_x = (uint8_t) fixp16_to_int_floor(fix16_max(span->e0.x, span->e1.x));
+            rasterizer_step_edge(&span->e0);
+            rasterizer_step_edge(&span->e1);
+
+            // Remember the min-maxs for when we sort the span next time
+            uint8_t min_x = (uint8_t) fixp16_to_int_floor(fix16_min(span->e0.x, span->e1.x));
+            uint8_t max_x = (uint8_t) fixp16_to_int_floor(fix16_max(span->e0.x, span->e1.x));
+
+            span->min_x = min_x;
+            span->max_x = max_x;
+
+            ++span_count;
         }
 
         // If this span is still relevant, push it to the new list
