@@ -2,6 +2,10 @@
 #include "rasterizer.h"
 #include "holomesh.h"
 
+#ifndef PEBBLE
+#   pragma optimize("", off)
+#endif
+
 //#define PERSPECTIVE_CORRECT
 
 static inline uint8_t rasterizer_decode_texel_2bit(
