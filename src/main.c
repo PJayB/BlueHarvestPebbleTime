@@ -130,7 +130,7 @@ void load_background_image(int affiliation) {
 
 void load_holomesh(int craft_index) {
     g_current_craft = craft_index;
-    int resource_id = RESOURCE_ID_HOLO_TIEFTR;//c_craft_info[craft_index].resource_id;
+    int resource_id = c_craft_info[craft_index].resource_id;
     ResHandle handle = resource_get_handle(resource_id);
     
     // Allocate space for the resource
@@ -292,7 +292,12 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         }
     }
     if (units_changed & MINUTE_UNIT) {
-        load_holomesh(rand() % c_craft_info_count);
+        int new_craft_index = rand() % (c_craft_info_count - 1);
+        if (new_craft_index >= g_current_craft) {
+            new_craft_index++;
+        }
+        
+        load_holomesh(new_craft_index);
         update_title_and_info();
         update_time_display(tick_time);
     }
