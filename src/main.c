@@ -223,7 +223,7 @@ void paint(void) {
 }
 
 int8_t get_color_mod(uint8_t y) {
-    return 0;//(y & 1) - (((y - g_hologram_frame) & 7) == 7);
+    return (y & 1) - (((y - g_hologram_frame) & 7) == 7);
 }
 
 #ifdef PROFILE
