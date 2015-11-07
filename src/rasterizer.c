@@ -310,14 +310,14 @@ rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping
     for (rasterizer_stepping_span_t* span = next_span; span != NULL; span = next_span) {
         next_span = span->next_span; // cache this off so we don't lose it when disconnecting it from the current list
 
-        fix16_t min_x = span->min_e->x;
-//        ASSERT(fix16_floor(min_x) == fix16_floor(fix16_min(span->e0.x, span->e1.x)));
+        fix16_t min_x = span->min_x;
+        ASSERT(fix16_floor(min_x) == fix16_floor(fix16_min(span->e0.x, span->e1.x)));
         
         // Find where to insert this span
         rasterizer_stepping_span_t* insert_here = new_span_list;
 
         // At the start?
-        if (min_x <= insert_here->min_e->x) {
+        if (min_x <= insert_here->min_x) {
             span->next_span = insert_here;
             new_span_list = span;
             continue;
@@ -325,13 +325,13 @@ rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping
 
         // Elsewhere:
         for (rasterizer_stepping_span_t* comp_span = insert_here->next_span; comp_span != NULL; comp_span = comp_span->next_span) {
-            if (comp_span->min_e->x >= min_x) {
+            if (comp_span->min_x >= min_x) {
                 break;
             }
             insert_here = comp_span;
         }
 
-        ASSERT(insert_here->min_e->x <= span->min_e->x);
+        ASSERT(insert_here->min_x <= span->min_x);
 
         // Insert here
         span->next_span = insert_here->next_span;
@@ -341,8 +341,8 @@ rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping
 #ifdef RASTERIZER_CHECKS
     fix16_t x = -fix16_one;
     for (rasterizer_stepping_span_t* span = next_span; span != NULL; span = span->next_span) {
-        ASSERT(x <= span->min_e->x);
-        x = span->min_e->x;
+        ASSERT(x <= span->min_x);
+        x = span->min_x;
     }
 #endif
 
@@ -353,7 +353,7 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
     rasterizer_stepping_span_t* new_active_span_list = NULL;
 
     // Sort the span list
-    rasterizer_stepping_span_t* next_span = active_span_list; //rasterizer_sort_spans_horizontal(active_span_list);
+    rasterizer_stepping_span_t* next_span = rasterizer_sort_spans_horizontal(active_span_list);
 
     while (next_span != NULL) {
         rasterizer_stepping_span_t* span = next_span;
@@ -368,6 +368,8 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
                 &span->e0,
                 &span->e1,
                 y);
+
+            span->min_x = fix16_min(span->e0.x, span->e1.x);
         }
 
         // If this span is still relevant, push it to the new list
@@ -441,36 +443,11 @@ rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_
     ASSERT(span->y0 < span->y1);
     ASSERT(span->y0 >= start_y);
 
-    // Which edge follows the leftmost path?
-    if (e0->x == e1->x && ey0->y0 == ey1->y0) {
-        // Origin is at the start of both edges
-#ifdef RASTERIZER_CHECKS
-        span->c0 = fixp16_mul(ey1->y1 - ey0->y0, ey0->dx);
-        span->c1 = fixp16_mul((e1->x + ey1->dx) - e0->x, ey0->dy);
-#endif
-
-        if (point_left_of_line(e1->x + ey1->dx, ey1->y1, e0->x, ey0->y0, ey0->dx, ey0->dy)) {
-            span->min_e = &span->e1;
-        } else {
-            span->min_e = &span->e0;
-        }
-    } else {
-        // Origin is at the ends of both edges
-#ifdef RASTERIZER_CHECKS
-        span->c0 = fixp16_mul(ey1->y0 - ey0->y0, ey0->dx);
-        span->c1 = fixp16_mul(e1->x - e0->x, ey0->dy);
-#endif
-
-        if (point_left_of_line(e1->x, ey1->y0, e0->x, ey0->y0, ey0->dx, ey0->dy)) {
-            span->min_e = &span->e1;
-        }
-        else {
-            span->min_e = &span->e0;
-        }
-    }
-
     // Advance the edge to the start position
     rasterizer_advance_stepping_edge(&span->e0, ey0->y0, ey1->y0);
+
+    // Which edge follows the leftmost path?
+    span->min_x = fix16_min(span->e0.x, span->e1.x);
 
     return span;
 }
