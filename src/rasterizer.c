@@ -27,8 +27,8 @@ static inline uint8_t rasterizer_decode_texel_2bit(
     return unpacked & 3;
 }
 
-uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, fix16_t base_u, fix16_t base_v, fix16_t iz) {
 #ifdef PERSPECTIVE_CORRECT
+uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, fix16_t base_u, fix16_t base_v, fix16_t iz) {
     // Get the texture coordinates in [0,1]
     fix16_t u = fixp16_ufrac(fixp16_mul(base_u, iz));
     fix16_t v = fixp16_ufrac(fixp16_mul(base_v, iz));
@@ -36,12 +36,6 @@ uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, 
     // Scale the UVs to texture size
     u = fixp16_mul(u, texture->scale_u);
     v = fixp16_mul(v, texture->scale_v);
-
-#else
-    (void) iz;
-    fix16_t u = base_u & texture->scale_u;
-    fix16_t v = base_v & texture->scale_v;
-#endif    
 
     // Get the texel 
     uint16_t iu = (uint16_t) fixp16_to_int_floor(u);
@@ -53,7 +47,39 @@ uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, 
             texture->stride,
             iu, iv));
 }
+#else
+uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, fix16_t base_u, fix16_t base_v) {
+    fix16_t u = base_u & texture->scale_u;
+    fix16_t v = base_v & texture->scale_v;
 
+    // Get the texel 
+    uint16_t iu = (uint16_t) fixp16_to_int_floor(u);
+    uint16_t iv = (uint16_t) fixp16_to_int_floor(v);
+    return rasterizer_shade(
+        user_ptr,
+        rasterizer_decode_texel_2bit(
+            texture->data.ptr,
+            texture->stride,
+            iu, iv));
+}
+#endif
+
+void rasterizer_draw_samples(rasterizer_context_t* ctx, uint8_t min_x, uint8_t max_x, uint8_t y) {
+    const rasterizer_sample_t* sample = &ctx->samples[min_x];
+    for (uint8_t ix = min_x; ix < max_x; ++ix, ++sample) {
+        if (sample->texture != NULL) {
+            uint8_t p = rasterizer_get_fragment_color(
+                ctx->user_ptr,
+                sample->texture,
+                sample->u,
+                sample->v);
+
+            rasterizer_set_pixel(ctx->user_ptr, ix, y, p);
+        }
+    }
+}
+
+#if 0
 void rasterizer_draw_short_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
@@ -264,13 +290,7 @@ void rasterizer_draw_span_segment(
 #endif
 }
 
-inline void rasterizer_step_edge(rasterizer_stepping_edge_t* edge) {
-    edge->x += edge->step_x;
-    edge->z += edge->step_z;
-    edge->u += edge->step_u;
-    edge->v += edge->step_v;
-}
-
+// TODO: remove me
 void rasterizer_draw_span(rasterizer_context_t* ctx, const rasterizer_span_t* span, uint8_t iy) {
     rasterizer_draw_span_segment(
         ctx,
@@ -281,6 +301,56 @@ void rasterizer_draw_span(rasterizer_context_t* ctx, const rasterizer_span_t* sp
         span->z0, span->z1,
         span->u0, span->u1,
         span->v0, span->v1);
+}
+#endif // 0
+
+inline void rasterizer_step_edge(rasterizer_stepping_edge_t* edge) {
+    edge->x += edge->step_x;
+    edge->z += edge->step_z;
+    edge->u += edge->step_u;
+    edge->v += edge->step_v;
+}
+
+void rasterizer_create_samples(rasterizer_context_t* ctx, const rasterizer_span_t* span) {
+    uint8_t x0 = span->x0;
+    uint8_t x1 = span->x1;
+
+    // Skip zero size lines
+    if (x0 == x1) return;
+
+    const texture_t* texture = span->texture;
+
+    ASSERT(x0 < x1);
+    ASSERT(x0 < MAX_VIEWPORT_X);
+    ASSERT(x1 <= MAX_VIEWPORT_X);
+    ASSERT(texture != NULL);
+
+    // Get the interpolants
+    uint8_t delta = x1 - x0;
+    fix16_t g = fixp16_rcp(delta);
+    fix16_t z = span->z0;
+    fix16_t step_z = fixp16_mul(span->z1 - z, g);
+
+    fix16_t base_u = span->u0;
+    fix16_t base_v = span->v0;
+    fix16_t step_u = fixp16_mul(span->u1 - base_u, g);
+    fix16_t step_v = fixp16_mul(span->v1 - base_v, g);
+
+    for (uint8_t ix = span->x0; ix < span->x1; ++ix) {
+        fix16_t oldZ = ctx->depths[ix];
+        if (z > 0 && oldZ < z) {
+            rasterizer_sample_t* sample = &ctx->samples[ix];
+            sample->texture = texture;
+            sample->u = base_u;
+            sample->v = base_v;
+
+            ctx->depths[ix] = z;
+        }
+
+        z += step_z;
+        base_u += step_u;
+        base_v += step_v;
+    }
 }
 
 void rasterizer_create_span(rasterizer_span_t* span, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2) {
@@ -374,6 +444,8 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
     rasterizer_stepping_span_t* next_span = rasterizer_sort_spans_horizontal(active_span_list);
 
     int span_count = 0;
+    uint8_t sl_min = MAX_VIEWPORT_X;
+    uint8_t sl_max = 0;
 
     while (next_span != NULL) {
         rasterizer_stepping_span_t* span = next_span;
@@ -383,7 +455,10 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
         if (span->y0 <= y && span->y1 > y) {
             rasterizer_span_t clipped_span;
             rasterizer_create_span(&clipped_span, span->texture, &span->e0, &span->e1);
-            rasterizer_draw_span(ctx, &clipped_span, y);
+            rasterizer_create_samples(ctx, &clipped_span);
+
+            if (sl_min > clipped_span.x0) sl_min = clipped_span.x0;
+            if (sl_max < clipped_span.x1) sl_max = clipped_span.x1;
 
             rasterizer_step_edge(&span->e0);
             rasterizer_step_edge(&span->e1);
@@ -413,6 +488,11 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
         g_active_span_high_water_mark = span_count;
     }
 #endif
+
+    // Rasterize the samples
+    if (sl_min < sl_max) {
+        rasterizer_draw_samples(ctx, sl_min, sl_max, y);
+    }
 
     return new_active_span_list;
 }

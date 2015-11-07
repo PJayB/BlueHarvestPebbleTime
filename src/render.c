@@ -6,6 +6,10 @@
 #include "wireframe.h"
 #include "scratch.h"
 
+#ifndef PEBBLE
+#   pragma optimize("", off)
+#endif
+
 #ifdef RASTERIZER_CHECKS
 static size_t g_active_span_high_watermark = 0;
 #endif
@@ -90,8 +94,7 @@ void render_draw_mesh_wireframe(void* user_ptr, const holomesh_t* mesh, const ve
 }
 
 #define MAX_KICKOFFS 250
-#define MAX_CLIPPED_SPANS 100
-static rasterizer_span_t g_clipped_spans[MAX_CLIPPED_SPANS];
+static rasterizer_sample_t g_samples[MAX_VIEWPORT_X];
 static fix16_t g_depths[MAX_VIEWPORT_X];
 
 #ifdef FULL_COLOR
@@ -162,7 +165,7 @@ void render_scanlines(render_frame_buffer_t* frame_buffer, const viewport_t* vie
 
     rasterizer_context_t raster_ctx;
     raster_ctx.depths = g_depths;
-    raster_ctx.clipped_spans = g_clipped_spans;
+    raster_ctx.samples = g_samples;
     raster_ctx.user_ptr = &render_ctx;
 
     rasterizer_stepping_span_t* active_span_list = NULL;
@@ -198,6 +201,7 @@ void render_scanlines(render_frame_buffer_t* frame_buffer, const viewport_t* vie
 
         // Clear the depth values for this scanline
         memset(g_depths, 0, sizeof(g_depths));
+        memset(g_samples, 0, sizeof(g_samples));
 
         active_span_list = rasterizer_draw_active_spans(
             &raster_ctx,
