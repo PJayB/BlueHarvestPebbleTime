@@ -274,8 +274,8 @@ void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture
     rasterizer_draw_span(
         ctx,
         texture,
-        (uint8_t) fix16_to_int_round(x0),
-        (uint8_t) fix16_to_int_round(x1),
+        (int16_t) fix16_to_int_floor(x0),
+        (int16_t) fix16_to_int_floor(x1),
         iy,
         edge1->z, edge2->z,
         edge1->u, edge2->u,
@@ -306,7 +306,7 @@ rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping
         next_span = span->next_span; // cache this off so we don't lose it when disconnecting it from the current list
 
         fix16_t min_x = span->min_e->x;
-//        ASSERT(fix16_round(min_x) == fix16_round(fix16_min(span->e0.x, span->e1.x)));
+//        ASSERT(fix16_floor(min_x) == fix16_floor(fix16_min(span->e0.x, span->e1.x)));
         
         // Find where to insert this span
         rasterizer_stepping_span_t* insert_here = new_span_list;
