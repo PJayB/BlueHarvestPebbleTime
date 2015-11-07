@@ -81,7 +81,7 @@ void rasterizer_draw_short_span(
             // Set the pixel
             rasterizer_set_pixel(ctx->user_ptr, ix, iy, p);
 
-            ctx->depths[ix] = (uint16_t) z;
+            ctx->depths[ix] = z;
         }
 
         z += step_z;
@@ -155,7 +155,7 @@ void rasterizer_draw_long_span(
                 c |= p << shift;
                 mask |= 3 << shift;
 
-                ctx->depths[ix] = (uint16_t) z;
+                ctx->depths[ix] = z;
             }
 
             z += step_z;

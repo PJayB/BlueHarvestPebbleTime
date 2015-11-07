@@ -73,7 +73,7 @@ typedef struct rasterizer_stepping_span_s {
 } rasterizer_stepping_span_t;
 
 typedef struct rasterizer_context_s {
-    uint16_t* depths;
+    fix16_t* depths;
     void* user_ptr;
 } rasterizer_context_t;
 
