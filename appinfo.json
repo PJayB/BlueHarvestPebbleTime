@@ -9,11 +9,6 @@
     "resources": {
         "media": [
             {
-                "file": "data/assault.holo",
-                "name": "HOLO_ASSAULT",
-                "type": "raw"
-            },
-            {
                 "file": "data/awing.holo",
                 "name": "HOLO_AWING",
                 "type": "raw"
@@ -66,11 +61,6 @@
             {
                 "file": "data/tiebmb.holo",
                 "name": "HOLO_TIEBMB",
-                "type": "raw"
-            },
-            {
-                "file": "data/tiedel.holo",
-                "name": "HOLO_TIEDEL",
                 "type": "raw"
             },
             {
