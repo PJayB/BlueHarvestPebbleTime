@@ -311,8 +311,8 @@ rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping
     for (rasterizer_stepping_span_t* span = next_span; span != NULL; span = next_span) {
         next_span = span->next_span; // cache this off so we don't lose it when disconnecting it from the current list
 
-        fix16_t min_x = span->min_x;
-        ASSERT(fix16_floor(min_x) == fix16_floor(fix16_min(span->e0.x, span->e1.x)));
+        uint8_t min_x = span->min_x;
+        ASSERT(min_x == (uint8_t) fixp16_to_int_floor(fix16_min(span->e0.x, span->e1.x)));
         
         // Find where to insert this span
         rasterizer_stepping_span_t* insert_here = new_span_list;
@@ -370,7 +370,8 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
                 &span->e1,
                 y);
 
-            span->min_x = fix16_min(span->e0.x, span->e1.x);
+            span->min_x = (uint8_t) fixp16_to_int_floor(fix16_min(span->e0.x, span->e1.x));
+            span->max_x = (uint8_t) fixp16_to_int_floor(fix16_max(span->e0.x, span->e1.x));
         }
 
         // If this span is still relevant, push it to the new list
@@ -444,7 +445,8 @@ rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_
     rasterizer_advance_stepping_edge(&span->e0, ey0->y0, ey1->y0);
 
     // Which edge follows the leftmost path?
-    span->min_x = fix16_min(span->e0.x, span->e1.x);
+    span->min_x = (uint8_t) fixp16_to_int_floor(fix16_min(span->e0.x, span->e1.x));
+    span->max_x = (uint8_t) fixp16_to_int_floor(fix16_max(span->e0.x, span->e1.x));
 
     return span;
 }

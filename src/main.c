@@ -6,7 +6,7 @@
 // TODO: remove me
 #include "scratch.h"
 
-//#define PROFILE
+#define PROFILE
 
 char g_craft_name_lower[256] = {0};
     
@@ -283,6 +283,7 @@ void update_time_display(struct tm *tick_time) {
 
 uint32_t g_stat_timer = 1;
 void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
+#ifndef PROFILE
     if (units_changed & SECOND_UNIT) {
         g_stat_timer++;
 
@@ -301,6 +302,7 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         update_title_and_info();
         update_time_display(tick_time);
     }
+#endif
 }
 
 void create_symbol_text(char* out, size_t out_size, const char* in) {
@@ -352,7 +354,7 @@ void handle_init(void) {
 #ifndef PROFILE
     load_holomesh(rand() % c_craft_info_count);
 #else
-    load_holomesh(3);
+    load_holomesh(2);
 #endif
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "UI MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
