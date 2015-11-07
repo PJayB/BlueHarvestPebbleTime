@@ -408,10 +408,6 @@ void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_ste
     fix16_t step_t = fixp16_rcp(dy >> 16);
 
 #ifdef RASTERIZER_CHECKS
-    e->x0 = fix16_to_float(a->x);
-    e->y0 = fix16_to_float(a->y);
-    e->x1 = fix16_to_float(b->x);
-    e->y1 = fix16_to_float(b->y);
     e->min_x = fix16_min(a->x, b->x);
     e->max_x = fix16_max(b->x, a->x);
 #endif

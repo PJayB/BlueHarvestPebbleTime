@@ -54,7 +54,6 @@ typedef struct rasterizer_stepping_edge_s {
     fix16_t v, step_v;
 
 #ifdef RASTERIZER_CHECKS
-    float x0, x1, y0, y1;
     fix16_t min_x, max_x;
 #endif
 } rasterizer_stepping_edge_t;
