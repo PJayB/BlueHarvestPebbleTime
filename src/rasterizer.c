@@ -256,6 +256,7 @@ void rasterizer_draw_span(
             &base_u, step_u,
             &base_v, step_v);
     }
+#endif
 }
 
 void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2, uint8_t iy) {
