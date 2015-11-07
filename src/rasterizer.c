@@ -7,6 +7,7 @@
 #endif
 
 //#define PERSPECTIVE_CORRECT
+//#define NO_OVERDRAW
 
 static inline uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
@@ -64,6 +65,7 @@ uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, 
 }
 #endif
 
+#ifdef NO_OVERDRAW
 void rasterizer_draw_samples(rasterizer_context_t* ctx, uint8_t min_x, uint8_t max_x, uint8_t y) {
     const rasterizer_sample_t* sample = &ctx->samples[min_x];
     for (uint8_t ix = min_x; ix < max_x; ++ix, ++sample) {
@@ -78,8 +80,9 @@ void rasterizer_draw_samples(rasterizer_context_t* ctx, uint8_t min_x, uint8_t m
         }
     }
 }
+#endif
 
-#if 0
+#ifndef NO_OVERDRAW
 void rasterizer_draw_short_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
@@ -103,13 +106,10 @@ void rasterizer_draw_short_span(
             // Get the texel 
 #ifdef FULL_COLOR
             uint8_t p = 0b11000000 | (uint8_t) ((size_t) texture >> 2);
+#elif defined(PERSPECTIVE_CORRECT)
+            uint8_t p = rasterizer_get_fragment_color(ctx->user_ptr, texture, base_u, base_v, iz);
 #else
-            uint8_t p = rasterizer_get_fragment_color(
-                ctx->user_ptr,
-                texture,
-                base_u,
-                base_v,
-                iz);
+            uint8_t p = rasterizer_get_fragment_color(ctx->user_ptr, texture, base_u, base_v);
 #endif
 
             // Set the pixel
@@ -180,12 +180,11 @@ void rasterizer_draw_long_span(
             fix16_t oldZ = ctx->depths[ix];
             if (z > 0 && oldZ < z) {
                 // Get the texel 
-                uint8_t p = rasterizer_get_fragment_color(
-                    ctx->user_ptr,
-                    texture,
-                    base_u,
-                    base_v,
-                    iz);
+#if defined(PERSPECTIVE_CORRECT)
+                uint8_t p = rasterizer_get_fragment_color(ctx->user_ptr, texture, base_u, base_v, iz);
+#else
+                uint8_t p = rasterizer_get_fragment_color(ctx->user_ptr, texture, base_u, base_v);
+#endif
 
                 // Set the pixel
                 c |= p << shift;
@@ -302,7 +301,7 @@ void rasterizer_draw_span(rasterizer_context_t* ctx, const rasterizer_span_t* sp
         span->u0, span->u1,
         span->v0, span->v1);
 }
-#endif // 0
+#endif // !NO_OVERDRAW
 
 inline void rasterizer_step_edge(rasterizer_stepping_edge_t* edge) {
     edge->x += edge->step_x;
@@ -441,7 +440,7 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
     rasterizer_stepping_span_t* new_active_span_list = NULL;
 
     // Sort the span list
-    rasterizer_stepping_span_t* next_span = rasterizer_sort_spans_horizontal(active_span_list);
+    rasterizer_stepping_span_t* next_span = active_span_list;
 
     int span_count = 0;
     uint8_t sl_min = MAX_VIEWPORT_X;
@@ -455,7 +454,11 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
         if (span->y0 <= y && span->y1 > y) {
             rasterizer_span_t clipped_span;
             rasterizer_create_span(&clipped_span, span->texture, &span->e0, &span->e1);
+#ifdef NO_OVERDRAW
             rasterizer_create_samples(ctx, &clipped_span);
+#else
+            rasterizer_draw_span(ctx, &clipped_span, y);
+#endif
 
             if (sl_min > clipped_span.x0) sl_min = clipped_span.x0;
             if (sl_max < clipped_span.x1) sl_max = clipped_span.x1;
@@ -490,9 +493,11 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
 #endif
 
     // Rasterize the samples
+#ifdef NO_OVERDRAW
     if (sl_min < sl_max) {
         rasterizer_draw_samples(ctx, sl_min, sl_max, y);
     }
+#endif
 
     return new_active_span_list;
 }
