@@ -99,11 +99,15 @@ typedef struct render_context_s {
 } render_context_t;
 
 void raster_set_pixel_on_row(uint8_t* row_data, int x, uint8_t color) {
+#ifdef FULL_COLOR
+    row_data[x] = color;
+#else
     int byte_offset = x >> 2; // divide by 4 to get actual pixel byte
     int bit_shift = (~x & 3) << 1;
     uint8_t mask = 3 << bit_shift;
     uint8_t src = row_data[byte_offset] & ~mask;
     row_data[byte_offset] = src | (color << bit_shift);
+#endif
 }
 
 void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
@@ -112,12 +116,14 @@ void rasterizer_set_pixel(void* user_ptr, int x, int y, uint8_t color) {
     raster_set_pixel_on_row(&fb->data[y * fb->row_stride], x, color);
 }
 
+#ifndef FULL_COLOR
 void rasterizer_set_pixel_4(void* user_ptr, int x, int y, uint8_t color, uint8_t mask) {
     render_context_t* ctx = (render_context_t*) user_ptr;
     render_frame_buffer_t* fb = ctx->frame_buffer;
     uint8_t* row = &fb->data[y * fb->row_stride];
     row[x] = (color & mask);
 }
+#endif
 
 uint8_t rasterizer_shade(void* user_ptr, uint8_t color) {
     render_context_t* ctx = (render_context_t*) user_ptr;

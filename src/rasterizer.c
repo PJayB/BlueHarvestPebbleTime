@@ -71,12 +71,16 @@ void rasterizer_draw_short_span(
         if (z > 0 && oldZ < z)
         {
             // Get the texel 
+#ifdef FULL_COLOR
+            uint8_t p = 0b11000000 | (uint8_t) ((size_t) texture >> 2);
+#else
             uint8_t p = rasterizer_get_fragment_color(
                 ctx->user_ptr,
                 texture,
                 base_u,
                 base_v,
                 iz);
+#endif
 
             // Set the pixel
             rasterizer_set_pixel(ctx->user_ptr, ix, iy, p);
@@ -94,6 +98,7 @@ void rasterizer_draw_short_span(
     *p_base_v = base_v;
 }
 
+#ifndef FULL_COLOR
 void rasterizer_draw_long_span(
     rasterizer_context_t* ctx,
     const texture_t* texture,
@@ -184,6 +189,7 @@ void rasterizer_draw_long_span(
     *p_base_u = base_u;
     *p_base_v = base_v;
 }
+#endif
 
 void rasterizer_draw_span(
     rasterizer_context_t* ctx,
@@ -219,6 +225,16 @@ void rasterizer_draw_span(
     fix16_t iz = z;
 #endif
 
+#ifdef FULL_COLOR
+    rasterizer_draw_short_span(
+        ctx,
+        texture,
+        ia, ib,
+        iy, iz,
+        &z, step_z,
+        &base_u, step_u,
+        &base_v, step_v);
+#else
     if (delta < 4 || (delta == 4 && (ia & 3) != 0)) {
         rasterizer_draw_short_span(
             ctx,
