@@ -130,7 +130,8 @@ uint8_t rasterizer_shade(void* user_ptr, uint8_t color) {
     
     // TODO: saturated add?
     int8_t c = color + ctx->color_mod;
-    if (c < 0 || c > 3) return color;
+    if (c < 0) return 0;
+    if (c > 3) return 3;
     else return c;
 }
 
