@@ -258,7 +258,7 @@ void rasterizer_draw_span(
     }
 }
 
-void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2, int16_t iy) {
+void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2, uint8_t iy) {
     if (edge1->x > edge2->x) {
         rasterizer_stepping_edge_t* t = edge1;
         edge1 = edge2;
@@ -274,8 +274,8 @@ void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture
     rasterizer_draw_span(
         ctx,
         texture,
-        (int16_t) fix16_to_int_floor(x0),
-        (int16_t) fix16_to_int_floor(x1),
+        (uint8_t) fix16_to_int_floor(x0),
+        (uint8_t) fix16_to_int_floor(x1),
         iy,
         edge1->z, edge2->z,
         edge1->u, edge2->u,
