@@ -134,13 +134,15 @@ void rasterizer_draw_long_span(
     }
 
     // Iterate over the scanline
-    uint16_t ix4 = ia4 >> 2;
+    uint8_t ix4 = ia4 >> 2;
     for (uint8_t cx = ia4; cx < ib4; cx += 4, ++ix4) {
         uint8_t mask = 0;
         uint8_t c = 0;
         uint8_t shift = 6;
 
         uint8_t ex = cx + 4;
+        ASSERT(ex <= ib4);
+        ASSERT(ex <= ib);
         
 #ifdef PERSPECTIVE_CORRECT
         // Interpolate every 16 pixels
@@ -148,7 +150,6 @@ void rasterizer_draw_long_span(
             iz = fix16_rcp(z);
         }
 #endif
-
         for (uint8_t ix = cx; ix < ex; ++ix, shift -= 2) {
             fix16_t oldZ = ctx->depths[ix];
             if (z > 0 && oldZ < z) {
@@ -176,7 +177,7 @@ void rasterizer_draw_long_span(
             rasterizer_set_pixel_4(ctx->user_ptr, ix4, iy, c, mask);
         }
     }
-
+    
     if (ib4 < ib) {
         // Draw up to ia4
         rasterizer_draw_short_span(
