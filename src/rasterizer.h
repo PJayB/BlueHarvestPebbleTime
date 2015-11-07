@@ -54,6 +54,7 @@ typedef struct rasterizer_stepping_edge_s {
     fix16_t v, step_v;
 
 #ifdef RASTERIZER_CHECKS
+    float x0, x1, y0, y1;
     fix16_t min_x, max_x;
 #endif
 } rasterizer_stepping_edge_t;
@@ -64,6 +65,11 @@ typedef struct rasterizer_stepping_span_s {
     struct rasterizer_stepping_span_s* next_span;
     const texture_t* texture;
     uint16_t y0, y1;
+
+#ifdef RASTERIZER_CHECKS
+    // TODO: remove me
+    fix16_t c0, c1;
+#endif
 } rasterizer_stepping_span_t;
 
 typedef struct rasterizer_context_s {

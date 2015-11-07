@@ -258,8 +258,8 @@ void rasterizer_draw_span_between_edges(rasterizer_context_t* ctx, const texture
     rasterizer_draw_span(
         ctx,
         texture,
-        (uint8_t) fixp16_to_int_floor(x0),
-        (uint8_t) fixp16_to_int_floor(x1),
+        (uint8_t) fix16_to_int_round(x0),
+        (uint8_t) fix16_to_int_round(x1),
         iy,
         edge1->z, edge2->z,
         edge1->u, edge2->u,
@@ -290,7 +290,7 @@ rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping
         next_span = span->next_span; // cache this off so we don't lose it when disconnecting it from the current list
 
         fix16_t min_x = span->min_e->x;
-        ASSERT(min_x == fix16_min(span->e0.x, span->e1.x));
+//        ASSERT(fix16_round(min_x) == fix16_round(fix16_min(span->e0.x, span->e1.x)));
         
         // Find where to insert this span
         rasterizer_stepping_span_t* insert_here = new_span_list;
@@ -332,7 +332,7 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
     rasterizer_stepping_span_t* new_active_span_list = NULL;
 
     // Sort the span list
-    rasterizer_stepping_span_t* next_span = rasterizer_sort_spans_horizontal(active_span_list);
+    rasterizer_stepping_span_t* next_span = active_span_list; //rasterizer_sort_spans_horizontal(active_span_list);
 
     while (next_span != NULL) {
         rasterizer_stepping_span_t* span = next_span;
@@ -385,6 +385,10 @@ void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_ste
     fix16_t step_t = fixp16_rcp(dy >> 16);
 
 #ifdef RASTERIZER_CHECKS
+    e->x0 = fix16_to_float(a->x);
+    e->y0 = fix16_to_float(a->y);
+    e->x1 = fix16_to_float(b->x);
+    e->y1 = fix16_to_float(b->y);
     e->min_x = fix16_min(a->x, b->x);
     e->max_x = fix16_max(b->x, a->x);
 #endif
@@ -400,7 +404,7 @@ void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_ste
 }
 
 int point_left_of_line(fix16_t px, fix16_t py, fix16_t lx, fix16_t ly, fix16_t dx, fix16_t dy) {
-    return fixp16_mul((py - ly), dx) >= fixp16_mul((px - lx), dy);
+    return fixp16_mul((py - ly), dx) > fixp16_mul((px - lx), dy);
 }
 
 rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_span_t* span_list, const texture_t* texture, rasterizer_stepping_edge_t* e0, const rasterizer_stepping_edge_y_t* ey0, rasterizer_stepping_edge_t* e1, const rasterizer_stepping_edge_y_t* ey1, int16_t start_y) {
@@ -419,6 +423,11 @@ rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_
     // Which edge follows the leftmost path?
     if (e0->x == e1->x && ey0->y0 == ey1->y0) {
         // Origin is at the start of both edges
+#ifdef RASTERIZER_CHECKS
+        span->c0 = fixp16_mul(ey1->y1 - ey0->y0, ey0->dx);
+        span->c1 = fixp16_mul((e1->x + ey1->dx) - e0->x, ey0->dy);
+#endif
+
         if (point_left_of_line(e1->x + ey1->dx, ey1->y1, e0->x, ey0->y0, ey0->dx, ey0->dy)) {
             span->min_e = &span->e1;
         } else {
@@ -426,6 +435,11 @@ rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_
         }
     } else {
         // Origin is at the ends of both edges
+#ifdef RASTERIZER_CHECKS
+        span->c0 = fixp16_mul(ey1->y0 - ey0->y0, ey0->dx);
+        span->c1 = fixp16_mul(e1->x - e0->x, ey0->dy);
+#endif
+
         if (point_left_of_line(e1->x, ey1->y0, e0->x, ey0->y0, ey0->dx, ey0->dy)) {
             span->min_e = &span->e1;
         }
