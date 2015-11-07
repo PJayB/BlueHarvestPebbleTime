@@ -286,7 +286,6 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
     if (units_changed & SECOND_UNIT) {
         g_stat_timer++;
 
-        set_new_stat_text();
         if (g_stat_timer == 8) {        
             set_new_stat_text();
             g_stat_timer = 0;
