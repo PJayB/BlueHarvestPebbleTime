@@ -6,7 +6,7 @@
 // TODO: remove me
 #include "scratch.h"
 
-//#define PROFILE
+#define PROFILE
 
 char g_craft_name_lower[256] = {0};
     

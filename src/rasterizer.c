@@ -9,7 +9,7 @@
 //#define PERSPECTIVE_CORRECT
 //#define NO_OVERDRAW
 
-static inline uint8_t rasterizer_decode_texel_2bit(
+FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
     uint16_t stride,
     uint16_t u, uint16_t v) {    
@@ -29,7 +29,7 @@ static inline uint8_t rasterizer_decode_texel_2bit(
 }
 
 #ifdef PERSPECTIVE_CORRECT
-uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, fix16_t base_u, fix16_t base_v, fix16_t iz) {
+FORCE_INLINE uint8_t rasterizer_get_fragment_color(fix16_t base_u, fix16_t base_v, fix16_t iz, const texture_t* texture, void* user_ptr) {
     // Get the texture coordinates in [0,1]
     fix16_t u = fixp16_ufrac(fixp16_mul(base_u, iz));
     fix16_t v = fixp16_ufrac(fixp16_mul(base_v, iz));
@@ -49,7 +49,7 @@ uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, 
             iu, iv));
 }
 #else
-uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, fix16_t base_u, fix16_t base_v) {
+FORCE_INLINE uint8_t rasterizer_get_fragment_color(fix16_t base_u, fix16_t base_v, const texture_t* texture, void* user_ptr) {
     fix16_t u = base_u & texture->scale_u;
     fix16_t v = base_v & texture->scale_v;
 
@@ -66,7 +66,7 @@ uint8_t rasterizer_get_fragment_color(void* user_ptr, const texture_t* texture, 
 #endif
 
 #ifdef NO_OVERDRAW
-void rasterizer_draw_samples(rasterizer_context_t* ctx, uint8_t min_x, uint8_t max_x, uint8_t y) {
+FORCE_INLINE void rasterizer_draw_samples(uint8_t min_x, uint8_t max_x, uint8_t y, rasterizer_context_t* ctx) {
     const rasterizer_sample_t* sample = &ctx->samples[min_x];
     for (uint8_t ix = min_x; ix < max_x; ++ix, ++sample) {
         if (sample->texture != NULL) {
@@ -83,14 +83,27 @@ void rasterizer_draw_samples(rasterizer_context_t* ctx, uint8_t min_x, uint8_t m
 #endif
 
 #ifndef NO_OVERDRAW
-void rasterizer_draw_short_span(
-    rasterizer_context_t* ctx,
-    const texture_t* texture,
+FORCE_INLINE void rasterizer_draw_pixel(fix16_t base_u, fix16_t base_v, uint8_t ix, uint8_t iy, fix16_t iz, const texture_t* texture, rasterizer_context_t* ctx) {
+#ifdef FULL_COLOR
+    uint8_t p = 0b11000000 | (uint8_t) ((size_t) texture >> 2);
+#elif defined(PERSPECTIVE_CORRECT)
+    uint8_t p = rasterizer_get_fragment_color(base_u, base_v, iz, texture, ctx->user_ptr);
+#else
+    uint8_t p = rasterizer_get_fragment_color(base_u, base_v, texture, ctx->user_ptr);
+#endif
+
+    // Set the pixel
+    rasterizer_set_pixel(ctx->user_ptr, ix, iy, p);
+}
+
+FORCE_INLINE void rasterizer_draw_short_span(
     uint8_t ia, uint8_t ib,
     uint8_t iy, fix16_t iz,
     fix16_t* p_z, fix16_t step_z,
     fix16_t* p_base_u, fix16_t step_u,
-    fix16_t* p_base_v, fix16_t step_v) {
+    fix16_t* p_base_v, fix16_t step_v,
+    const texture_t* texture,
+    rasterizer_context_t* ctx) {
 
     ASSERT(ia < ib);
 
@@ -103,21 +116,10 @@ void rasterizer_draw_short_span(
         fix16_t oldZ = ctx->depths[ix];
         if (z > 0 && oldZ < z)
         {
-            // Get the texel 
-#ifdef FULL_COLOR
-            uint8_t p = 0b11000000 | (uint8_t) ((size_t) texture >> 2);
-#elif defined(PERSPECTIVE_CORRECT)
-            uint8_t p = rasterizer_get_fragment_color(ctx->user_ptr, texture, base_u, base_v, iz);
-#else
-            uint8_t p = rasterizer_get_fragment_color(ctx->user_ptr, texture, base_u, base_v);
-#endif
-
-            // Set the pixel
-            rasterizer_set_pixel(ctx->user_ptr, ix, iy, p);
-
+            rasterizer_draw_pixel(base_u, base_v, ix, iy, iz, texture, ctx);
             ctx->depths[ix] = z;
         }
-
+        
         z += step_z;
         base_u += step_u;
         base_v += step_v;
@@ -129,14 +131,14 @@ void rasterizer_draw_short_span(
 }
 
 #ifndef FULL_COLOR
-void rasterizer_draw_long_span(
-    rasterizer_context_t* ctx,
-    const texture_t* texture,
+FORCE_INLINE void rasterizer_draw_long_span(
     uint8_t ia, uint8_t ib,
     uint8_t iy, fix16_t iz,
     fix16_t* p_z, fix16_t step_z,
     fix16_t* p_base_u, fix16_t step_u,
-    fix16_t* p_base_v, fix16_t step_v) {
+    fix16_t* p_base_v, fix16_t step_v,
+    const texture_t* texture, 
+    rasterizer_context_t* ctx) {
 
     ASSERT(ia < ib);
 
@@ -149,14 +151,13 @@ void rasterizer_draw_long_span(
 
     if (ia4 > ia) {
         // Draw up to ia4
-        rasterizer_draw_short_span(
-            ctx,
-            texture,
-            ia, ia4,
-            iy, iz,
-            &z, step_z,
-            &base_u, step_u,
-            &base_v, step_v);
+        for (uint8_t ix = ia; ix < ia4; ++ix) {
+            rasterizer_draw_pixel(base_u, base_v, ix, iy, iz, texture, ctx);
+
+            z += step_z;
+            base_u += step_u;
+            base_v += step_v;
+        }
     }
 
     // Iterate over the scanline
@@ -181,9 +182,9 @@ void rasterizer_draw_long_span(
             if (z > 0 && oldZ < z) {
                 // Get the texel 
 #if defined(PERSPECTIVE_CORRECT)
-                uint8_t p = rasterizer_get_fragment_color(ctx->user_ptr, texture, base_u, base_v, iz);
+                uint8_t p = rasterizer_get_fragment_color(base_u, base_v, iz, texture, ctx->user_ptr);
 #else
-                uint8_t p = rasterizer_get_fragment_color(ctx->user_ptr, texture, base_u, base_v);
+                uint8_t p = rasterizer_get_fragment_color(base_u, base_v, texture, ctx->user_ptr);
 #endif
 
                 // Set the pixel
@@ -205,14 +206,13 @@ void rasterizer_draw_long_span(
     
     if (ib4 < ib) {
         // Draw up to ia4
-        rasterizer_draw_short_span(
-            ctx,
-            texture,
-            ib4, ib,
-            iy, iz,
-            &z, step_z,
-            &base_u, step_u,
-            &base_v, step_v);
+        for (uint8_t ix = ib4; ix < ib; ++ix) {
+            rasterizer_draw_pixel(base_u, base_v, ix, iy, iz, texture, ctx);
+
+            z += step_z;
+            base_u += step_u;
+            base_v += step_v;
+        }
     }
 
     *p_z = z;
@@ -221,7 +221,7 @@ void rasterizer_draw_long_span(
 }
 #endif
 
-void rasterizer_draw_span_segment(
+FORCE_INLINE void rasterizer_draw_span_segment(
     rasterizer_context_t* ctx,
     const texture_t* texture,
     uint8_t ia, uint8_t ib,
@@ -257,40 +257,38 @@ void rasterizer_draw_span_segment(
 
 #ifdef FULL_COLOR
     rasterizer_draw_short_span(
-        ctx,
-        texture,
         ia, ib,
         iy, iz,
         &z, step_z,
         &base_u, step_u,
-        &base_v, step_v);
+        &base_v, step_v,
+        texture,
+        ctx);
 #else
     if (delta < 4 || (delta == 4 && (ia & 3) != 0)) {
         rasterizer_draw_short_span(
-            ctx,
-            texture,
             ia, ib,
             iy, iz,
             &z, step_z,
             &base_u, step_u,
-            &base_v, step_v);
-    }
-    else
-    {
+            &base_v, step_v,
+            texture,
+            ctx);
+    } else {
         rasterizer_draw_long_span(
-            ctx,
-            texture,
             ia, ib,
             iy, iz,
             &z, step_z,
             &base_u, step_u,
-            &base_v, step_v);
+            &base_v, step_v,
+            texture,
+            ctx);
     }
 #endif
 }
 
 // TODO: remove me
-void rasterizer_draw_span(rasterizer_context_t* ctx, const rasterizer_span_t* span, uint8_t iy) {
+FORCE_INLINE void rasterizer_draw_span(rasterizer_context_t* ctx, const rasterizer_span_t* span, uint8_t iy) {
     rasterizer_draw_span_segment(
         ctx,
         span->texture,
@@ -303,7 +301,7 @@ void rasterizer_draw_span(rasterizer_context_t* ctx, const rasterizer_span_t* sp
 }
 #endif // !NO_OVERDRAW
 
-inline void rasterizer_step_edge(rasterizer_stepping_edge_t* edge) {
+FORCE_INLINE void rasterizer_step_edge(rasterizer_stepping_edge_t* edge) {
     edge->x += edge->step_x;
     edge->z += edge->step_z;
     edge->u += edge->step_u;
@@ -352,7 +350,7 @@ void rasterizer_create_samples(rasterizer_context_t* ctx, const rasterizer_span_
     }
 }
 
-void rasterizer_create_span(rasterizer_span_t* span, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2) {
+FORCE_INLINE void rasterizer_create_span(rasterizer_span_t* span, const texture_t* texture, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2) {
     if (edge1->x > edge2->x) {
         rasterizer_stepping_edge_t* t = edge1;
         edge1 = edge2;
@@ -366,8 +364,8 @@ void rasterizer_create_span(rasterizer_span_t* span, const texture_t* texture, r
     ASSERT(x1 >= edge2->min_x && x1 <= edge2->max_x);
 
     span->texture = texture;
-    span->x0 = (uint8_t) fix16_to_int_floor(x0);
-    span->x1 = (uint8_t) fix16_to_int_floor(x1);
+    span->x0 = (uint8_t) fixp16_to_int_floor(x0);
+    span->x1 = (uint8_t) fixp16_to_int_floor(x1);
     span->z0 = edge1->z;
     span->u0 = edge1->u;
     span->v0 = edge1->v;
@@ -376,7 +374,7 @@ void rasterizer_create_span(rasterizer_span_t* span, const texture_t* texture, r
     span->v1 = edge2->v;
 }
 
-rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping_span_t* span_list) {
+FORCE_INLINE rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping_span_t* span_list) {
     if (span_list == NULL || span_list->next_span == NULL) {
         return span_list;
     }
@@ -502,7 +500,7 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
     return new_active_span_list;
 }
 
-void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_stepping_edge_y_t* ys, const vec3_t* a, const vec3_t* b, const vec2_t* uva, const vec2_t* uvb) {
+FORCE_INLINE void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_stepping_edge_y_t* ys, const vec3_t* a, const vec3_t* b, const vec2_t* uva, const vec2_t* uvb) {
 
     // Sort by Y
     if (a->y > b->y) {
@@ -540,11 +538,11 @@ void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, rasterizer_ste
     e->v = uva->y;
 }
 
-int point_left_of_line(fix16_t px, fix16_t py, fix16_t lx, fix16_t ly, fix16_t dx, fix16_t dy) {
+FORCE_INLINE int point_left_of_line(fix16_t px, fix16_t py, fix16_t lx, fix16_t ly, fix16_t dx, fix16_t dy) {
     return fixp16_mul((py - ly), dx) > fixp16_mul((px - lx), dy);
 }
 
-rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_span_t* span_list, const texture_t* texture, const rasterizer_stepping_edge_t* e0, const rasterizer_stepping_edge_y_t* ey0, const rasterizer_stepping_edge_t* e1, const rasterizer_stepping_edge_y_t* ey1, int16_t start_y) {
+FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_span_t* span_list, const texture_t* texture, const rasterizer_stepping_edge_t* e0, const rasterizer_stepping_edge_y_t* ey0, const rasterizer_stepping_edge_t* e1, const rasterizer_stepping_edge_y_t* ey1, int16_t start_y) {
     rasterizer_stepping_span_t* span = rasterizer_allocate_stepping_span();
     span->e0 = *e0;
     span->e1 = *e1;
@@ -567,7 +565,7 @@ rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_
     return span;
 }
 
-rasterizer_stepping_span_t* rasterizer_create_spans_for_triangle(rasterizer_stepping_span_t* span_list, const texture_t* texture, const vec3_t* a, const vec2_t* uva, const vec3_t* b, const vec2_t* uvb, const vec3_t* c, const vec2_t* uvc, int16_t start_y) {
+FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_spans_for_triangle(rasterizer_stepping_span_t* span_list, const texture_t* texture, const vec3_t* a, const vec2_t* uva, const vec3_t* b, const vec2_t* uvb, const vec3_t* c, const vec2_t* uvc, int16_t start_y) {
 
     // Must be within bounds
     ASSERT(a->x >= 0);
@@ -628,7 +626,7 @@ rasterizer_stepping_span_t* rasterizer_create_spans_for_triangle(rasterizer_step
     return span_list;
 }
 
-rasterizer_stepping_span_t* rasterizer_create_face_spans(rasterizer_stepping_span_t* span_list, const viewport_t* viewport, const face_t* face, const vec3_t* points, const vec2_t* texcoords, const texture_t* texture, uint16_t y, uint8_t needs_clip) {
+FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_face_spans(rasterizer_stepping_span_t* span_list, const viewport_t* viewport, const face_t* face, const vec3_t* points, const vec2_t* texcoords, const texture_t* texture, uint16_t y, uint8_t needs_clip) {
     const vec2_t* c_uva = &texcoords[face->uvs.a];
     const vec2_t* c_uvb = &texcoords[face->uvs.b];
     const vec2_t* c_uvc = &texcoords[face->uvs.c];
@@ -677,7 +675,7 @@ rasterizer_stepping_span_t* rasterizer_create_face_spans(rasterizer_stepping_spa
     return span_list;
 }
 
-void rasterizer_advance_stepping_edge(rasterizer_stepping_edge_t* e, fix16_t y0, fix16_t y) {
+FORCE_INLINE void rasterizer_advance_stepping_edge(rasterizer_stepping_edge_t* e, fix16_t y0, fix16_t y) {
     fix16_t my = y - y0;
     if (my == 0)
         return;

@@ -18,6 +18,7 @@
 #   define END_PROFILE(x) PROFILE_NAME(x) += get_milliseconds()
 #   define GET_PROFILE(x) PROFILE_NAME(x)
 #   define PRINT_PROFILE(x) APP_LOG(APP_LOG_LEVEL_DEBUG, "PROFILE " #x ": %ums", (unsigned) PROFILE_NAME(x))
+#   define FORCE_INLINE inline __attribute__((always_inline))
 #else
 #   include <stdint.h>
 #   define WIN32_LEAN_AND_MEAN
