@@ -327,6 +327,7 @@ FORCE_INLINE void rasterizer_create_span(rasterizer_span_t* span, rasterizer_ste
     span->v1 = edge2->v;
 }
 
+#ifndef ENABLE_DEPTH_TEST
 #define rasterizer_get_sort_key(span) fix16_max((span)->e0.z, (span)->e1.z)
 
 FORCE_INLINE rasterizer_stepping_span_t* rasterizer_sort_spans(rasterizer_stepping_span_t* span_list) {
@@ -380,6 +381,7 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_sort_spans(rasterizer_steppi
 
     return new_span_list;
 }
+#endif // ENABLE_DEPTH_TEST
 
 #ifdef RASTERIZER_CHECKS
 int g_active_span_high_water_mark = 0;
@@ -392,7 +394,11 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
     rasterizer_stepping_span_t* new_active_span_list = NULL;
 
     // Sort the span list
+#ifdef ENABLE_DEPTH_TEST
+    rasterizer_stepping_span_t* next_span = active_span_list;
+#else
     rasterizer_stepping_span_t* next_span = rasterizer_sort_spans(active_span_list);
+#endif
 
     int span_count = 0;
     uint8_t sl_min = MAX_VIEWPORT_X;
@@ -423,8 +429,10 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
             rasterizer_step_edge(span->e0);
             rasterizer_step_edge(span->e1);
 
+#ifndef ENABLE_DEPTH_TEST
             // Remember the min-z for when we sort the span next time
             span->sort_key = rasterizer_get_sort_key(span);
+#endif
 
             ++span_count;
         }
@@ -513,8 +521,9 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasteri
     // Advance the edge to the start position
     rasterizer_advance_stepping_edge(&span->e0, ey0->y0, ey1->y0);
 
-    // Which edge follows the leftmost path?
+#ifndef ENABLE_DEPTH_TEST
     span->sort_key = rasterizer_get_sort_key(span);
+#endif
 
     return span;
 }

@@ -6,9 +6,9 @@
 // TODO: remove me
 #include "scratch.h"
 
-#define PROFILE
+//#define PROFILE
 //#define OVERDRAW_TEST
-#define NO_HOLO_EFFECT
+//#define NO_HOLO_EFFECT
 
 char g_craft_name_lower[256] = {0};
     
