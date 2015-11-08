@@ -59,17 +59,11 @@ typedef struct rasterizer_stepping_edge_s {
 } rasterizer_stepping_edge_t;
 
 typedef struct rasterizer_span_s {
-    const texture_t* texture;
     fix16_t z0, z1;
     fix16_t u0, u1;
     fix16_t v0, v1;
     uint8_t x0, x1;
 } rasterizer_span_t;
-
-typedef struct rasterizer_sample_s {
-    const texture_t* texture;
-    fix16_t u, v;
-} rasterizer_sample_t;
 
 typedef struct rasterizer_stepping_span_s {
     rasterizer_stepping_edge_t e0, e1;
@@ -81,7 +75,6 @@ typedef struct rasterizer_stepping_span_s {
 
 typedef struct rasterizer_context_s {
     fix16_t* depths;
-    rasterizer_sample_t* samples;
     void* user_ptr;
 } rasterizer_context_t;
 
