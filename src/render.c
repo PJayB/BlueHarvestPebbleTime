@@ -174,11 +174,9 @@ void render_scanlines(render_frame_buffer_t* frame_buffer, const viewport_t* vie
 
     const rasterizer_face_kickoff_t* face_kickoff = face_kickoffs;
     const rasterizer_face_kickoff_t* last_kickoff = face_kickoff + num_kickoffs;
-    for (uint16_t y = min_y; y < viewport->height; ++y)
-    {
+    for (uint16_t y = min_y; y < viewport->height; ++y) {        
         // Kick off any faces this scanline?
-        while (face_kickoff->y == y && face_kickoff < last_kickoff)
-        {
+        while (face_kickoff->y == y && face_kickoff < last_kickoff) {
             // Kick off the face
             const holomesh_hull_t* hull = &mesh->hulls.ptr[face_kickoff->hull_index];
             const holomesh_face_t* face = &hull->faces.ptr[face_kickoff->face_index];
@@ -194,9 +192,9 @@ void render_scanlines(render_frame_buffer_t* frame_buffer, const viewport_t* vie
                 (uint8_t) face_kickoff->clip);
             face_kickoff++;
         }
-
+        
         if (!active_span_list)
-            return; // end of mesh (we know all meshes are contiguous)
+            break; // end of mesh (we know all meshes are contiguous)
       
         // What color difference shall we apply to this line?
         render_ctx.color_mod = get_color_mod((uint8_t) y);
@@ -248,7 +246,7 @@ size_t render_create_mesh_kickoffs(const viewport_t* viewport, const holomesh_t*
 static rasterizer_face_kickoff_t g_face_kickoffs[MAX_KICKOFFS];
 
 void render_draw_mesh_solid(render_frame_buffer_t* frame_buffer, const viewport_t* viewport, const holomesh_t* mesh, const vec3_t* const* transformed_points) {
-    
+
     size_t kickoff_count = render_create_mesh_kickoffs(
         viewport,
         mesh,
