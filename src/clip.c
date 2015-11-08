@@ -11,15 +11,13 @@ typedef struct clip_plane_s {
     fix16_t nxd, nyd;
 } clip_plane_t;
 
-fix16_t get_signed_distance_to_plane(const clip_point_t* v, const clip_plane_t* p)
-{
+fix16_t get_signed_distance_to_plane(const clip_point_t* v, const clip_plane_t* p) {
     fix16_t dx = fix16_sub(p->nxd, v->p.x);
     fix16_t dy = fix16_sub(p->nyd, v->p.y);
     return fix16_add(fix16_mul(dx, p->nx), fix16_mul(dy, p->ny));
 }
 
-void emit_intersection(clip_point_t* outputs, int* num_outputs, const clip_point_t* a, const clip_point_t* b, const clip_plane_t* p, fix16_t d)
-{
+void emit_intersection(clip_point_t* outputs, int* num_outputs, const clip_point_t* a, const clip_point_t* b, const clip_plane_t* p, fix16_t d) {
     fix16_t edx = fix16_sub(b->p.x, a->p.x);
     fix16_t edy = fix16_sub(b->p.y, a->p.y);
     fix16_t eDotN = fix16_add(fix16_mul(edx, p->nx), fix16_mul(edy, p->ny));
@@ -27,8 +25,7 @@ void emit_intersection(clip_point_t* outputs, int* num_outputs, const clip_point
         return;
 
     fix16_t t = fix16_div(d, eDotN);
-    if (t >= 0 && t <= fix16_one)
-    {
+    if (t >= 0 && t <= fix16_one) {
         vec3_t ip;
         vec2_t it;
 
@@ -47,8 +44,7 @@ void emit_intersection(clip_point_t* outputs, int* num_outputs, const clip_point
     }
 }
 
-const clip_point_t* get_clip_point(const clip_point_t* arr, int num, int i)
-{
+const clip_point_t* get_clip_point(const clip_point_t* arr, int num, int i) {
     int j = (i < 0) ? num + i : (i >= num) ? i - num : i;
     ASSERT(j >= 0);
     ASSERT(j < num);
@@ -81,25 +77,20 @@ rasterizer_stepping_span_t* rasterizer_clip_spans_for_triangle(rasterizer_steppi
 
     static const size_t c_numCuttingPlanes = 4;
 
-    for (size_t planei = 0; planei < c_numCuttingPlanes; ++planei)
-    {
+    for (size_t planei = 0; planei < c_numCuttingPlanes; ++planei) {
         const clip_plane_t* plane = &c_cuttingPlanes[planei];
         num_outputs = 0;
 
-        for (int i = 0; i < num_inputs; ++i)
-        {
+        for (int i = 0; i < num_inputs; ++i) {
             const clip_point_t* p = &inputs[i];
             fix16_t d = get_signed_distance_to_plane(p, plane);
-            if (d > 0)
-            {
+            if (d > 0) {
                 // The point is outside
                 const clip_point_t* prev = get_clip_point(inputs, num_inputs, i - 1);
                 const clip_point_t* next = get_clip_point(inputs, num_inputs, i + 1);
                 emit_intersection(outputs, &num_outputs, p, prev, plane, d);
                 emit_intersection(outputs, &num_outputs, p, next, plane, d);
-            }
-            else
-            {
+            } else {
                 // Point is inside, so just copy
                 outputs[num_outputs++] = *p;
             }
@@ -118,8 +109,7 @@ rasterizer_stepping_span_t* rasterizer_clip_spans_for_triangle(rasterizer_steppi
 
     // If there are points, draw the faces
     const clip_point_t* clip_a = &inputs[0];
-    for (int i = 1; i < num_inputs; ++i)
-    {
+    for (int i = 1; i < num_inputs; ++i) {
         const clip_point_t* clip_b = &inputs[i];
         const clip_point_t* clip_c = &inputs[(i + 1) % num_inputs];
 
