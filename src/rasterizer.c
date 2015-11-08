@@ -7,7 +7,9 @@
 #endif
 
 //#define PERSPECTIVE_CORRECT
+//#define ACCURATE_PERSPECTIVE_CORRECT
 //#define DISABLE_LONG_SPAN_OPTIMIZATIONS
+//#define ENABLE_DEPTH_TEST
 
 FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
@@ -95,13 +97,17 @@ FORCE_INLINE void rasterizer_draw_short_span(
 
     // Iterate over the scanline
     for (uint8_t ix = ia; ix < ib; ++ix) {
+#ifdef ENABLE_DEPTH_TEST
         fix16_t oldZ = ctx->depths[ix];
         if (z > 0 && oldZ < z)
         {
+#endif
             rasterizer_draw_pixel(base_u, base_v, ix, iy, iz, texture, ctx);
+#ifdef ENABLE_DEPTH_TEST
             ctx->depths[ix] = z;
         }
-        
+#endif
+
         z += step_z;
         base_u += step_u;
         base_v += step_v;
@@ -134,12 +140,15 @@ FORCE_INLINE void rasterizer_draw_long_span(
     if (ia4 > ia) {
         // Draw up to ia4
         for (uint8_t ix = ia; ix < ia4; ++ix) {
+#ifdef ENABLE_DEPTH_TEST
             fix16_t oldZ = ctx->depths[ix];
             if (z > 0 && oldZ < z) {
+#endif
                 rasterizer_draw_pixel(base_u, base_v, ix, iy, iz, texture, ctx);
+#ifdef ENABLE_DEPTH_TEST
                 ctx->depths[ix] = z;
             }
-
+#endif
             z += step_z;
             base_u += step_u;
             base_v += step_v;
@@ -158,14 +167,20 @@ FORCE_INLINE void rasterizer_draw_long_span(
         ASSERT(ex <= ib);
         
 #ifdef PERSPECTIVE_CORRECT
+#   ifdef ACCURATE_PERSPECTIVE_CORRECT
+        iz = fix16_rcp(z);
+#   else
         // Interpolate every 16 pixels
         if ((cx & 15) == 0) {
             iz = fix16_rcp(z);
         }
+#   endif
 #endif
         for (uint8_t ix = cx; ix < ex; ++ix, shift -= 2) {
+#ifdef ENABLE_DEPTH_TEST
             fix16_t oldZ = ctx->depths[ix];
             if (z > 0 && oldZ < z) {
+#endif
                 // Get the texel 
 #if defined(PERSPECTIVE_CORRECT)
                 uint8_t p = rasterizer_get_fragment_color(base_u, base_v, iz, texture, ctx->user_ptr);
@@ -177,8 +192,10 @@ FORCE_INLINE void rasterizer_draw_long_span(
                 c |= p << shift;
                 mask |= 3 << shift;
 
+#ifdef ENABLE_DEPTH_TEST
                 ctx->depths[ix] = z;
             }
+#endif
 
             z += step_z;
             base_u += step_u;
@@ -193,11 +210,15 @@ FORCE_INLINE void rasterizer_draw_long_span(
     if (ib4 < ib) {
         // Draw up to ia4
         for (uint8_t ix = ib4; ix < ib; ++ix) {
+#ifdef ENABLE_DEPTH_TEST
             fix16_t oldZ = ctx->depths[ix];
             if (z > 0 && oldZ < z) {
+#endif
                 rasterizer_draw_pixel(base_u, base_v, ix, iy, iz, texture, ctx);
+#ifdef ENABLE_DEPTH_TEST
                 ctx->depths[ix] = z;
             }
+#endif
 
             z += step_z;
             base_u += step_u;
@@ -306,6 +327,8 @@ FORCE_INLINE void rasterizer_create_span(rasterizer_span_t* span, rasterizer_ste
     span->v1 = edge2->v;
 }
 
+#define rasterizer_get_sort_key(span) fix16_max((span)->e0.z, (span)->e1.z)
+
 FORCE_INLINE rasterizer_stepping_span_t* rasterizer_sort_spans(rasterizer_stepping_span_t* span_list) {
     if (span_list == NULL || span_list->next_span == NULL) {
         return span_list;
@@ -320,7 +343,7 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_sort_spans(rasterizer_steppi
     for (rasterizer_stepping_span_t* span = next_span; span != NULL; span = next_span) {
         next_span = span->next_span; // cache this off so we don't lose it when disconnecting it from the current list
 
-        uint8_t sort_key = span->sort_key;
+        fix16_t sort_key = span->sort_key;
         
         // Find where to insert this span
         rasterizer_stepping_span_t* insert_here = new_span_list;
@@ -369,7 +392,7 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
     rasterizer_stepping_span_t* new_active_span_list = NULL;
 
     // Sort the span list
-    rasterizer_stepping_span_t* next_span = active_span_list; //rasterizer_sort_spans(active_span_list);
+    rasterizer_stepping_span_t* next_span = rasterizer_sort_spans(active_span_list);
 
     int span_count = 0;
     uint8_t sl_min = MAX_VIEWPORT_X;
@@ -401,7 +424,7 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
             rasterizer_step_edge(span->e1);
 
             // Remember the min-z for when we sort the span next time
-            span->sort_key = fix16_max(span->e0.z, span->e1.z);
+            span->sort_key = rasterizer_get_sort_key(span);
 
             ++span_count;
         }
@@ -491,7 +514,7 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasteri
     rasterizer_advance_stepping_edge(&span->e0, ey0->y0, ey1->y0);
 
     // Which edge follows the leftmost path?
-    span->sort_key = fix16_max(span->e0.z, span->e1.z);
+    span->sort_key = rasterizer_get_sort_key(span);
 
     return span;
 }

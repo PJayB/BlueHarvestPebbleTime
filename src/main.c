@@ -6,7 +6,8 @@
 // TODO: remove me
 #include "scratch.h"
 
-//#define PROFILE
+#define PROFILE
+//#define OVERDRAW_TEST
 #define NO_HOLO_EFFECT
 
 char g_craft_name_lower[256] = {0};
@@ -131,7 +132,11 @@ void load_background_image(int affiliation) {
 
 void load_holomesh(int craft_index) {
     g_current_craft = craft_index;
+#ifdef OVERDRAW_TEST
+    int resource_id = RESOURCE_ID_HOLO_TIEFTR;
+#else
     int resource_id = c_craft_info[craft_index].resource_id;
+#endif
     ResHandle handle = resource_get_handle(resource_id);
     
     // Allocate space for the resource
