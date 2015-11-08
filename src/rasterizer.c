@@ -9,7 +9,6 @@
 //#define PERSPECTIVE_CORRECT
 //#define ACCURATE_PERSPECTIVE_CORRECT
 //#define DISABLE_LONG_SPAN_OPTIMIZATIONS
-//#define ENABLE_DEPTH_TEST
 
 FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,

@@ -6,7 +6,8 @@
 // TODO: remove me
 #include "scratch.h"
 
-//#define PROFILE
+#define PROFILE
+#define PROFILE_SHIP
 //#define OVERDRAW_TEST
 //#define NO_HOLO_EFFECT
 
@@ -88,6 +89,13 @@ vec3_t* g_transformed_points[MAX_HULLS];
 char g_time_str[12];
 int g_current_craft = 0;
 
+#ifdef PROFILE
+static uint32_t max_time = 0;
+static uint32_t min_time = 10000;
+static uint32_t total_time = 0;
+static uint32_t samples = 0;
+#endif
+
 void update_title_and_info(void);
 
 typedef struct prezr_pack_header_s {
@@ -138,6 +146,13 @@ void load_holomesh(int craft_index) {
     int resource_id = c_craft_info[craft_index].resource_id;
 #endif
     ResHandle handle = resource_get_handle(resource_id);
+    
+#ifdef PROFILE
+    max_time = 0;
+    min_time = 10000;
+    total_time = 0;
+    samples = 0;
+#endif
     
     // Allocate space for the resource
     // TODO: estimate this better
@@ -236,13 +251,6 @@ int8_t get_color_mod(uint8_t y) {
 #endif
 }
 
-#ifdef PROFILE
-static uint32_t max_time = 0;
-static uint32_t min_time = 10000;
-static uint32_t total_time = 0;
-static uint32_t samples = 0;
-#endif
-
 void animation_timer_trigger(void* data) {
 #ifdef PROFILE
     uint32_t paint_start_time = get_milliseconds();
@@ -293,7 +301,7 @@ void update_time_display(struct tm *tick_time) {
 
 uint32_t g_stat_timer = 1;
 void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-#ifndef PROFILE
+#ifndef PROFILE_SHIP
     if (units_changed & SECOND_UNIT) {
         g_stat_timer++;
 
@@ -361,7 +369,7 @@ void handle_init(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "INIT MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
     
     // TODO: restore this once done profiling
-#ifndef PROFILE
+#ifndef PROFILE_SHIP
     load_holomesh(rand() % c_craft_info_count);
 #else
     load_holomesh(2);

@@ -74,7 +74,9 @@ typedef struct rasterizer_stepping_span_s {
 } rasterizer_stepping_span_t;
 
 typedef struct rasterizer_context_s {
+#ifdef ENABLE_DEPTH_TEST
     fix16_t* depths;
+#endif
     void* user_ptr;
 } rasterizer_context_t;
 

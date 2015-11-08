@@ -94,7 +94,9 @@ void render_draw_mesh_wireframe(void* user_ptr, const holomesh_t* mesh, const ve
 }
 
 #define MAX_KICKOFFS 250
+#ifdef ENABLE_DEPTH_TEST
 static fix16_t g_depths[MAX_VIEWPORT_X];
+#endif
 
 #ifdef FULL_COLOR
 static uint32_t g_pixels_out = 0;
@@ -163,7 +165,9 @@ void render_scanlines(render_frame_buffer_t* frame_buffer, const viewport_t* vie
     render_ctx.frame_buffer = frame_buffer;
 
     rasterizer_context_t raster_ctx;
+#ifdef ENABLE_DEPTH_TEST
     raster_ctx.depths = g_depths;
+#endif
     raster_ctx.user_ptr = &render_ctx;
 
     rasterizer_stepping_span_t* active_span_list = NULL;
@@ -198,8 +202,10 @@ void render_scanlines(render_frame_buffer_t* frame_buffer, const viewport_t* vie
         render_ctx.color_mod = get_color_mod((uint8_t) y);
 
         // Clear the depth values for this scanline
+#ifdef ENABLE_DEPTH_TEST
         memset(g_depths, 0, sizeof(g_depths));
-
+#endif
+        
         active_span_list = rasterizer_draw_active_spans(
             &raster_ctx,
             active_span_list,
