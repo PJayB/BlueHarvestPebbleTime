@@ -6,7 +6,8 @@
 // TODO: remove me
 #include "scratch.h"
 
-#define PROFILE
+//#define PROFILE
+#define NO_HOLO_EFFECT
 
 char g_craft_name_lower[256] = {0};
     
@@ -223,7 +224,11 @@ void paint(void) {
 }
 
 int8_t get_color_mod(uint8_t y) {
+#ifdef NO_HOLO_EFFECT
+    return 0;
+#else
     return (y & 1) - (((y - g_hologram_frame) & 7) == 7);
+#endif
 }
 
 #ifdef PROFILE

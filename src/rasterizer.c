@@ -7,6 +7,7 @@
 #endif
 
 //#define PERSPECTIVE_CORRECT
+//#define DISABLE_LONG_SPAN_OPTIMIZATIONS
 
 FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
@@ -133,7 +134,11 @@ FORCE_INLINE void rasterizer_draw_long_span(
     if (ia4 > ia) {
         // Draw up to ia4
         for (uint8_t ix = ia; ix < ia4; ++ix) {
-            rasterizer_draw_pixel(base_u, base_v, ix, iy, iz, texture, ctx);
+            fix16_t oldZ = ctx->depths[ix];
+            if (z > 0 && oldZ < z) {
+                rasterizer_draw_pixel(base_u, base_v, ix, iy, iz, texture, ctx);
+                ctx->depths[ix] = z;
+            }
 
             z += step_z;
             base_u += step_u;
@@ -188,7 +193,11 @@ FORCE_INLINE void rasterizer_draw_long_span(
     if (ib4 < ib) {
         // Draw up to ia4
         for (uint8_t ix = ib4; ix < ib; ++ix) {
-            rasterizer_draw_pixel(base_u, base_v, ix, iy, iz, texture, ctx);
+            fix16_t oldZ = ctx->depths[ix];
+            if (z > 0 && oldZ < z) {
+                rasterizer_draw_pixel(base_u, base_v, ix, iy, iz, texture, ctx);
+                ctx->depths[ix] = z;
+            }
 
             z += step_z;
             base_u += step_u;
@@ -236,7 +245,7 @@ FORCE_INLINE void rasterizer_draw_span_segment(
     fix16_t iz = z;
 #endif
 
-#ifdef FULL_COLOR
+#if defined(FULL_COLOR) || defined(DISABLE_LONG_SPAN_OPTIMIZATIONS)
     rasterizer_draw_short_span(
         ia, ib,
         iy, iz,
@@ -297,7 +306,7 @@ FORCE_INLINE void rasterizer_create_span(rasterizer_span_t* span, rasterizer_ste
     span->v1 = edge2->v;
 }
 
-FORCE_INLINE rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(rasterizer_stepping_span_t* span_list) {
+FORCE_INLINE rasterizer_stepping_span_t* rasterizer_sort_spans(rasterizer_stepping_span_t* span_list) {
     if (span_list == NULL || span_list->next_span == NULL) {
         return span_list;
     }
@@ -311,14 +320,13 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(raster
     for (rasterizer_stepping_span_t* span = next_span; span != NULL; span = next_span) {
         next_span = span->next_span; // cache this off so we don't lose it when disconnecting it from the current list
 
-        uint8_t min_x = span->min_x;
-        ASSERT(min_x == (uint8_t) fixp16_to_int_floor(fix16_min(span->e0.x, span->e1.x)));
+        uint8_t sort_key = span->sort_key;
         
         // Find where to insert this span
         rasterizer_stepping_span_t* insert_here = new_span_list;
 
         // At the start?
-        if (min_x <= insert_here->min_x) {
+        if (sort_key <= insert_here->sort_key) {
             span->next_span = insert_here;
             new_span_list = span;
             continue;
@@ -326,13 +334,13 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(raster
 
         // Elsewhere:
         for (rasterizer_stepping_span_t* comp_span = insert_here->next_span; comp_span != NULL; comp_span = comp_span->next_span) {
-            if (comp_span->min_x >= min_x) {
+            if (comp_span->sort_key >= sort_key) {
                 break;
             }
             insert_here = comp_span;
         }
 
-        ASSERT(insert_here->min_x <= span->min_x);
+        ASSERT(insert_here->sort_key <= span->sort_key);
 
         // Insert here
         span->next_span = insert_here->next_span;
@@ -340,10 +348,10 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_sort_spans_horizontal(raster
     }
 
 #ifdef RASTERIZER_CHECKS
-    fix16_t x = -fix16_one;
+    fix16_t x = 0;
     for (rasterizer_stepping_span_t* span = next_span; span != NULL; span = span->next_span) {
-        ASSERT(x <= span->min_x);
-        x = span->min_x;
+        ASSERT(x <= span->sort_key);
+        x = span->sort_key;
     }
 #endif
 
@@ -361,7 +369,7 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
     rasterizer_stepping_span_t* new_active_span_list = NULL;
 
     // Sort the span list
-    rasterizer_stepping_span_t* next_span = active_span_list;
+    rasterizer_stepping_span_t* next_span = active_span_list; //rasterizer_sort_spans(active_span_list);
 
     int span_count = 0;
     uint8_t sl_min = MAX_VIEWPORT_X;
@@ -392,12 +400,8 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
             rasterizer_step_edge(span->e0);
             rasterizer_step_edge(span->e1);
 
-            // Remember the min-maxs for when we sort the span next time
-            uint8_t min_x = (uint8_t) fixp16_to_int_floor(fix16_min(span->e0.x, span->e1.x));
-            uint8_t max_x = (uint8_t) fixp16_to_int_floor(fix16_max(span->e0.x, span->e1.x));
-
-            span->min_x = min_x;
-            span->max_x = max_x;
+            // Remember the min-z for when we sort the span next time
+            span->sort_key = fix16_max(span->e0.z, span->e1.z);
 
             ++span_count;
         }
@@ -487,8 +491,7 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasteri
     rasterizer_advance_stepping_edge(&span->e0, ey0->y0, ey1->y0);
 
     // Which edge follows the leftmost path?
-    span->min_x = (uint8_t) fixp16_to_int_floor(fix16_min(span->e0.x, span->e1.x));
-    span->max_x = (uint8_t) fixp16_to_int_floor(fix16_max(span->e0.x, span->e1.x));
+    span->sort_key = fix16_max(span->e0.z, span->e1.z);
 
     return span;
 }

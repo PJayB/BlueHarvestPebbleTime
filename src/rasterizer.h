@@ -69,8 +69,8 @@ typedef struct rasterizer_stepping_span_s {
     rasterizer_stepping_edge_t e0, e1;
     struct rasterizer_stepping_span_s* next_span;
     const texture_t* texture;
+    fix16_t sort_key;
     uint16_t y0, y1;
-    uint8_t min_x, max_x;
 } rasterizer_stepping_span_t;
 
 typedef struct rasterizer_context_s {
