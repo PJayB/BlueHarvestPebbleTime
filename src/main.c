@@ -54,7 +54,7 @@ static const int c_refreshTimer = 100;
 static const int c_viewportWidth = 144;
 static const int c_viewportHeight = 168;
 
-#define BACKGROUND_BLOB_SIZE 3054
+#define BACKGROUND_BLOB_SIZE 2622
 static uint8_t g_background_blob[BACKGROUND_BLOB_SIZE];
 
 // UI elements
@@ -362,7 +362,7 @@ void handle_init(void) {
     my_window = window_create();
     window_set_background_color(my_window, GColorBlack);
 
-    GRect logoRect = GRect(0, 0, c_viewportWidth, c_viewportHeight);
+    GRect logoRect = GRect(0, 12, c_viewportWidth, c_viewportWidth);
     logoLayer = bitmap_layer_create(logoRect);
     bitmap_layer_set_bitmap(logoLayer, logoBitmap);
     layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(logoLayer));
