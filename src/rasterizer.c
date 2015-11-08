@@ -327,7 +327,7 @@ FORCE_INLINE void rasterizer_create_span(rasterizer_span_t* span, rasterizer_ste
 }
 
 #ifndef ENABLE_DEPTH_TEST
-#define rasterizer_get_sort_key(span) fix16_max((span)->e0.z, (span)->e1.z)
+#define rasterizer_get_sort_key(span) (((span)->e0.z > (span)->e1.z) ? (span)->e0.z : (span)->e1.z)
 
 FORCE_INLINE rasterizer_stepping_span_t* rasterizer_sort_spans(rasterizer_stepping_span_t* span_list) {
     if (span_list == NULL || span_list->next_span == NULL) {
@@ -480,8 +480,6 @@ FORCE_INLINE void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, r
 
     ys->y0 = a->y;
     ys->y1 = b->y;
-    ys->dx = dx;
-    ys->dy = dy;
 
     fix16_t step_t = fixp16_rcp(dy >> 16);
 
@@ -500,18 +498,10 @@ FORCE_INLINE void rasterizer_init_stepping_edge(rasterizer_stepping_edge_t* e, r
     e->v = uva->y;
 }
 
-FORCE_INLINE int point_left_of_line(fix16_t px, fix16_t py, fix16_t lx, fix16_t ly, fix16_t dx, fix16_t dy) {
-    return fixp16_mul((py - ly), dx) > fixp16_mul((px - lx), dy);
-}
-
-FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasterizer_stepping_span_t* span_list, const texture_t* texture, const rasterizer_stepping_edge_t* e0, const rasterizer_stepping_edge_y_t* ey0, const rasterizer_stepping_edge_t* e1, const rasterizer_stepping_edge_y_t* ey1, int16_t start_y) {
-    rasterizer_stepping_span_t* span = rasterizer_allocate_stepping_span();
-    span->e0 = *e0;
-    span->e1 = *e1;
+FORCE_INLINE void rasterizer_init_stepping_span(rasterizer_stepping_span_t* span, const texture_t* texture, const rasterizer_stepping_edge_y_t* ey0, const rasterizer_stepping_edge_y_t* ey1, int16_t start_y) {
     span->y0 = fixp16_to_int_floor(ey1->y0);
     span->y1 = fixp16_to_int_floor(ey1->y1);
     span->texture = texture;
-    span->next_span = span_list;
 
     ASSERT(start_y >= 0);
     ASSERT(span->y0 < span->y1);
@@ -523,8 +513,6 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_stepping_span(rasteri
 #ifndef ENABLE_DEPTH_TEST
     span->sort_key = rasterizer_get_sort_key(span);
 #endif
-
-    return span;
 }
 
 FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_spans_for_triangle(rasterizer_stepping_span_t* span_list, const texture_t* texture, const vec3_t* a, const vec2_t* uva, const vec3_t* b, const vec2_t* uvb, const vec3_t* c, const vec2_t* uvc, int16_t start_y) {
@@ -544,45 +532,92 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_spans_for_triangle(ra
     ASSERT((b->y & 0xFFFF) == 0);
     ASSERT((c->x & 0xFFFF) == 0);
     ASSERT((c->y & 0xFFFF) == 0);
-
-    rasterizer_stepping_edge_t edges[3];
-    rasterizer_stepping_edge_y_t edgeYs[3];
-    rasterizer_init_stepping_edge(&edges[0], &edgeYs[0], a, b, uva, uvb);
-    rasterizer_init_stepping_edge(&edges[1], &edgeYs[1], b, c, uvb, uvc);
-    rasterizer_init_stepping_edge(&edges[2], &edgeYs[2], a, c, uva, uvc);
+    
+    fix16_t edge_deltas[3] = {
+        fix16_abs(b->y - a->y),
+        fix16_abs(c->y - b->y),
+        fix16_abs(a->y - c->y)
+    };
 
     // Which edge is the longest? We'll be stepping along that edge
     int longest_edge_index = 0;
     fix16_t max_length = 0;
     for (int i = 0; i < 3; ++i)
     {
-        if (edgeYs[i].dy > max_length)
+        if (edge_deltas[i] > max_length)
         {
-            max_length = edgeYs[i].dy;
+            max_length = edge_deltas[i];
             longest_edge_index = i;
         }
     }
 
     if (max_length == 0)
         return span_list;
+    
+    struct edge_s {
+        const vec3_t* a, *b;
+        const vec2_t* uva, *uvb;
+    } edges[3] = {
+        { a, b, uva, uvb },
+        { b, c, uvb, uvc },
+        { c, a, uvc, uva }
+    };
+    
+    int ei1 = (longest_edge_index + 1) % 3;
+    int ei2 = (longest_edge_index + 2) % 3;
+    
+    fix16_t ey1_dy = edge_deltas[ei1];
+    fix16_t ey2_dy = edge_deltas[ei2];
 
-    rasterizer_stepping_edge_t* e0 = &edges[longest_edge_index];
-    rasterizer_stepping_edge_t* e1 = &edges[(longest_edge_index + 1) % 3];
-    rasterizer_stepping_edge_t* e2 = &edges[(longest_edge_index + 2) % 3];
-
-    rasterizer_stepping_edge_y_t* ey0 = &edgeYs[longest_edge_index];
-    rasterizer_stepping_edge_y_t* ey1 = &edgeYs[(longest_edge_index + 1) % 3];
-    rasterizer_stepping_edge_y_t* ey2 = &edgeYs[(longest_edge_index + 2) % 3];
+    rasterizer_stepping_edge_t e0;
+    rasterizer_stepping_edge_y_t ey0;
+    rasterizer_init_stepping_edge(
+        &e0, 
+        &ey0, 
+        edges[longest_edge_index].a, 
+        edges[longest_edge_index].b, 
+        edges[longest_edge_index].uva, 
+        edges[longest_edge_index].uvb);    
 
     // Draw the spans
-    if (ey1->dy)
+    if (ey1_dy != 0)
     {
-        span_list = rasterizer_create_stepping_span(span_list, texture, e0, ey0, e1, ey1, start_y);
+        rasterizer_stepping_span_t* span = rasterizer_allocate_stepping_span();
+        span->e0 = e0; // copy e0
+        
+        rasterizer_stepping_edge_y_t ey1;
+        rasterizer_init_stepping_edge(
+            &span->e1, 
+            &ey1, 
+            edges[ei1].a, 
+            edges[ei1].b, 
+            edges[ei1].uva, 
+            edges[ei1].uvb);  
+        
+        rasterizer_init_stepping_span(span, texture, &ey0, &ey1, start_y);
+        
+        span->next_span = span_list;
+        span_list = span;
     }
     
-    if (ey2->dy)
+    if (ey2_dy != 0)
     {
-        span_list = rasterizer_create_stepping_span(span_list, texture, e0, ey0, e2, ey2, start_y);
+        rasterizer_stepping_span_t* span = rasterizer_allocate_stepping_span();
+        span->e0 = e0; // copy e0
+        
+        rasterizer_stepping_edge_y_t ey1;
+        rasterizer_init_stepping_edge(
+            &span->e1, 
+            &ey1, 
+            edges[ei2].a, 
+            edges[ei2].b, 
+            edges[ei2].uva, 
+            edges[ei2].uvb);  
+        
+        rasterizer_init_stepping_span(span, texture, &ey0, &ey1, start_y);
+        
+        span->next_span = span_list;
+        span_list = span;
     }
 
     return span_list;
