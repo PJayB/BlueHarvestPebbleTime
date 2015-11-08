@@ -268,12 +268,11 @@ FORCE_INLINE void rasterizer_draw_span_segment(
 #endif
 }
 
-FORCE_INLINE void rasterizer_step_edge(rasterizer_stepping_edge_t* edge) {
-    edge->x += edge->step_x;
-    edge->z += edge->step_z;
-    edge->u += edge->step_u;
-    edge->v += edge->step_v;
-}
+#define rasterizer_step_edge(edge) \
+    edge.x += edge.step_x;\
+    edge.z += edge.step_z;\
+    edge.u += edge.step_u;\
+    edge.v += edge.step_v;
 
 FORCE_INLINE void rasterizer_create_span(rasterizer_span_t* span, rasterizer_stepping_edge_t* edge1, rasterizer_stepping_edge_t* edge2) {
     if (edge1->x > edge2->x) {
@@ -390,8 +389,8 @@ rasterizer_stepping_span_t* rasterizer_draw_active_spans(rasterizer_context_t* c
             if (sl_min > clipped_span.x0) sl_min = clipped_span.x0;
             if (sl_max < clipped_span.x1) sl_max = clipped_span.x1;
 
-            rasterizer_step_edge(&span->e0);
-            rasterizer_step_edge(&span->e1);
+            rasterizer_step_edge(span->e0);
+            rasterizer_step_edge(span->e1);
 
             // Remember the min-maxs for when we sort the span next time
             uint8_t min_x = (uint8_t) fixp16_to_int_floor(fix16_min(span->e0.x, span->e1.x));
