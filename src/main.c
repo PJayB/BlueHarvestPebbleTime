@@ -6,8 +6,8 @@
 // TODO: remove me
 #include "scratch.h"
 
-#define PROFILE
-#define PROFILE_SHIP
+//#define PROFILE
+//#define PROFILE_SHIP
 //#define OVERDRAW_TEST
 //#define NO_HOLO_EFFECT
 

@@ -515,6 +515,43 @@ FORCE_INLINE void rasterizer_init_stepping_span(rasterizer_stepping_span_t* span
 #endif
 }
 
+int longest_index(fix16_t ab, fix16_t bc, fix16_t ca) {  
+#ifdef PEBBLE
+    register int i __asm__("r0");
+    __asm__(
+      "mov      r4, r0" "\n" // Move ab into r4
+      "mov      r0, #0" "\n" // Move literal 0 into r0
+      "cmp      r1, r4" "\n" // If bc > r4:
+      "itt      gt"     "\n"
+      "movgt    r4, r1" "\n" //   move bc into r4
+      "movgt    r0, #1" "\n" //   move 1 into r0
+      "cmp      r2, r4" "\n" // If ca > r4:
+      "itt      gt"     "\n"
+      "movgt    r4, r2" "\n" //   move ca into r4
+      "movgt    r0, #2" "\n" //   move 2 into r0
+      "cmp      r4, #0" "\n" // If the max length is 0:
+      "it       eq"     "\n"
+      "subeq    r0, #1" "\n" //   set the return code to -1
+      : : : "r0", "r4");
+    return i;
+#else
+    int longest_edge_index = 0;
+    fix16_t max_length = ab;
+    if (bc > max_length) { 
+        max_length = bc;
+        longest_edge_index = 1;
+    }
+    if (ca > max_length) {
+        max_length = ca;
+        longest_edge_index = 2;
+    }      
+    if (max_length == 0) {
+        return -1;
+    }
+    return longest_edge_index;
+#endif
+}
+
 FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_spans_for_triangle(rasterizer_stepping_span_t* span_list, const texture_t* texture, const vec3_t* a, const vec2_t* uva, const vec3_t* b, const vec2_t* uvb, const vec3_t* c, const vec2_t* uvc, int16_t start_y) {
 
     // Must be within bounds
@@ -540,18 +577,11 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_spans_for_triangle(ra
     };
 
     // Which edge is the longest? We'll be stepping along that edge
-    int longest_edge_index = 0;
-    fix16_t max_length = 0;
-    for (int i = 0; i < 3; ++i)
-    {
-        if (edge_deltas[i] > max_length)
-        {
-            max_length = edge_deltas[i];
-            longest_edge_index = i;
-        }
-    }
-
-    if (max_length == 0)
+    int longest_edge_index = longest_index(
+        edge_deltas[0],
+        edge_deltas[1],
+        edge_deltas[2]);
+    if (longest_edge_index == -1)
         return span_list;
     
     struct edge_s {
