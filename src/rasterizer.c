@@ -10,6 +10,32 @@
 //#define ACCURATE_PERSPECTIVE_CORRECT
 //#define DISABLE_LONG_SPAN_OPTIMIZATIONS
 
+#if 0 //def PEBBLE
+FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
+    const uint8_t* data,
+    uint16_t stride,
+    uint16_t u, uint16_t v) {    
+
+    register uint8_t i __asm__("r0");
+    __asm__(
+        // Get the base address of the pixel
+        "mul r6, r3, r1"    "\n" // v * stride = r6
+        "lsl r6, r6, #2"    "\n" // *= 4 (bytes)
+        "add r6, r6, r0"    "\n" // Add the base address
+        "lsr r4, r2, #2"    "\n" // Divide u by 4 (numBytes/16 = 4)
+        
+        // Load the pixel
+        "ldr r6, [r6, r4]"  "\n" // Load from r6 (v) + r4 (u)
+      
+        // Get the sub-pixel data
+        "and r5, r2, #15"   "\n" // Mask off bottom 4 bits of u
+        "lsl r5, r5, #1"    "\n" // Double the u shift
+        "lsr r6, r6, r5"    "\n" // Shift the pixel value by 2 * (u & 15)
+        "and r6, r6, #3"    "\n" // Mask off the part we want
+        : : : "r4", "r5", "r6");  
+        return i;
+}
+#else
 FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
     uint16_t stride,
@@ -28,6 +54,7 @@ FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     // Mask off higher texels
     return unpacked & 3;
 }
+#endif
 
 #ifdef PERSPECTIVE_CORRECT
 FORCE_INLINE uint8_t rasterizer_get_fragment_color(fix16_t base_u, fix16_t base_v, fix16_t iz, const texture_t* texture, void* user_ptr) {
