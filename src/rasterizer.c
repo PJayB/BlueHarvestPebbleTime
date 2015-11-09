@@ -10,7 +10,7 @@
 //#define ACCURATE_PERSPECTIVE_CORRECT
 //#define DISABLE_LONG_SPAN_OPTIMIZATIONS
 
-#if 0 //def PEBBLE
+#ifdef PEBBLE
 FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
     uint16_t stride,
@@ -25,13 +25,13 @@ FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
         "lsr r4, r2, #2"    "\n" // Divide u by 4 (numBytes/16 = 4)
         
         // Load the pixel
-        "ldr r6, [r6, r4]"  "\n" // Load from r6 (v) + r4 (u)
+        "ldr r6, [r6, r4]"  "\n" // Load from r6 (4 * v * stride) + r4 (4 * u / 16)
       
         // Get the sub-pixel data
         "and r5, r2, #15"   "\n" // Mask off bottom 4 bits of u
         "lsl r5, r5, #1"    "\n" // Double the u shift
         "lsr r6, r6, r5"    "\n" // Shift the pixel value by 2 * (u & 15)
-        "and r6, r6, #3"    "\n" // Mask off the part we want
+        "and r0, r6, #3"    "\n" // Mask off the part we want
         : : : "r4", "r5", "r6");  
         return i;
 }
