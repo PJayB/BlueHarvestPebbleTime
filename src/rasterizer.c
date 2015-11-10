@@ -10,47 +10,6 @@
 //#define ACCURATE_PERSPECTIVE_CORRECT
 //#define DISABLE_LONG_SPAN_OPTIMIZATIONS
 
-#ifdef PEBBLE
-FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
-    const uint8_t* data,
-    uint16_t stride,
-    uint16_t u, uint16_t v) {    
-
-    // %0 : i
-    // %1 : data
-    // %2 : stride
-    // %3 : u
-    // %4 : v
-    
-    register uint8_t i;
-    __asm__(
-        // Get the base address of the pixel
-        "mul r5, %2, %4"    "\n" // v * stride = r5
-        "lsr r4, %3, #4"    "\n" // Divide u by 16 (num pixels per dword)
-        "lsl r4, r4, #2"    "\n" // Mul u by 4 (num bytes per dword)
-        "add r5, r5, r4"    "\n" // Add the row address + u div 16
-    
-    // r5: row base address + u div 4
-        
-        // Load the pixel
-        "ldr r5, [%1, r5]" "\n" // Load from data + (v * stride) + (u / 16)
-    
-    // r6: 4 pixels of data
-      
-        // Get the sub-pixel data
-        "and r4, %3, #15"   "\n" // Mask off bottom 4 bits of u
-        "lsl r4, r4, #1"    "\n" // Double the u shift
-        
-    // r4: (u & 3) << 1
-        
-        "lsr r5, r5, r4"    "\n" // Shift the pixel value by 2 * (u & 15)
-        "and %0, r5, #3"    "\n" // Mask off the part we want
-        : "=r" (i)               // Outputs (i)
-        : "r" (data), "r" (stride), "r" (u), "r" (v) // Inputs (data, stride, u, v)
-        : "r4", "r5" );    // Clobber list
-        return i;
-}
-#else
 FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
     uint16_t stride,
@@ -69,7 +28,6 @@ FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     // Mask off higher texels
     return unpacked & 3;
 }
-#endif
 
 #ifdef PERSPECTIVE_CORRECT
 FORCE_INLINE uint8_t rasterizer_get_fragment_color(fix16_t base_u, fix16_t base_v, fix16_t iz, const texture_t* texture, void* user_ptr) {
