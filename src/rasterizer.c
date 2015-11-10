@@ -10,7 +10,7 @@
 //#define ACCURATE_PERSPECTIVE_CORRECT
 //#define DISABLE_LONG_SPAN_OPTIMIZATIONS
 
-#if 0 //def PEBBLE
+#ifdef PEBBLE
 FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
     uint16_t stride,
@@ -26,23 +26,24 @@ FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     __asm__(
         // Get the base address of the pixel
         "mul r5, %2, %4"    "\n" // v * stride = r5
-        "lsr r4, %3, #2"    "\n" // Divide u by 4 (num pixels per byte)
-        "add r5, r5, r4"    "\n" // Add the row address + u div 4
+        "lsr r4, %3, #4"    "\n" // Divide u by 16 (num pixels per dword)
+        "lsl r4, r4, #2"    "\n" // Mul u by 4 (num bytes per dword)
+        "add r5, r5, r4"    "\n" // Add the row address + u div 16
     
     // r5: row base address + u div 4
         
         // Load the pixel
-        "ldrb r5, [%1, r5]" "\n" // Load from data + (v * stride) + (u / 4)
+        "ldr r5, [%1, r5]" "\n" // Load from data + (v * stride) + (u / 16)
     
     // r6: 4 pixels of data
       
         // Get the sub-pixel data
-        "and r4, %3, #3"    "\n" // Mask off bottom 2 bits of u
+        "and r4, %3, #15"   "\n" // Mask off bottom 4 bits of u
         "lsl r4, r4, #1"    "\n" // Double the u shift
         
     // r4: (u & 3) << 1
         
-        "lsr r5, r5, r4"    "\n" // Shift the pixel value by 2 * (u & 3)
+        "lsr r5, r5, r4"    "\n" // Shift the pixel value by 2 * (u & 15)
         "and %0, r5, #3"    "\n" // Mask off the part we want
         : "=r" (i)               // Outputs (i)
         : "r" (data), "r" (stride), "r" (u), "r" (v) // Inputs (data, stride, u, v)
