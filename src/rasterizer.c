@@ -10,29 +10,43 @@
 //#define ACCURATE_PERSPECTIVE_CORRECT
 //#define DISABLE_LONG_SPAN_OPTIMIZATIONS
 
-#ifdef PEBBLE
+#if 0 //def PEBBLE
 FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     const uint8_t* data,
     uint16_t stride,
     uint16_t u, uint16_t v) {    
 
-    register uint8_t i __asm__("r0");
+    // %0 : i
+    // %1 : data
+    // %2 : stride
+    // %3 : u
+    // %4 : v
+    
+    register uint8_t i;
     __asm__(
         // Get the base address of the pixel
-        "mul r6, r3, r1"    "\n" // v * stride = r6
-        "lsl r6, r6, #2"    "\n" // *= 4 (bytes)
-        "add r6, r6, r0"    "\n" // Add the base address
-        "lsr r4, r2, #2"    "\n" // Divide u by 4 (numBytes/16 = 4)
+        "mul r5, %2, %4"    "\n" // v * stride = r5
+        "lsr r4, %3, #2"    "\n" // Divide u by 4 (num pixels per byte)
+        "add r5, r5, r4"    "\n" // Add the row address + u div 4
+    
+    // r5: row base address + u div 4
         
         // Load the pixel
-        "ldr r6, [r6, r4]"  "\n" // Load from r6 (4 * v * stride) + r4 (4 * u / 16)
+        "ldrb r5, [%1, r5]" "\n" // Load from data + (v * stride) + (u / 4)
+    
+    // r6: 4 pixels of data
       
         // Get the sub-pixel data
-        "and r5, r2, #15"   "\n" // Mask off bottom 4 bits of u
-        "lsl r5, r5, #1"    "\n" // Double the u shift
-        "lsr r6, r6, r5"    "\n" // Shift the pixel value by 2 * (u & 15)
-        "and r0, r6, #3"    "\n" // Mask off the part we want
-        : : : "r4", "r5", "r6");  
+        "and r4, %3, #3"    "\n" // Mask off bottom 2 bits of u
+        "lsl r4, r4, #1"    "\n" // Double the u shift
+        
+    // r4: (u & 3) << 1
+        
+        "lsr r5, r5, r4"    "\n" // Shift the pixel value by 2 * (u & 3)
+        "and %0, r5, #3"    "\n" // Mask off the part we want
+        : "=r" (i)               // Outputs (i)
+        : "r" (data), "r" (stride), "r" (u), "r" (v) // Inputs (data, stride, u, v)
+        : "r4", "r5" );    // Clobber list
         return i;
 }
 #else
@@ -43,14 +57,14 @@ FORCE_INLINE uint8_t rasterizer_decode_texel_2bit(
     ASSERT((stride & 0x3) == 0);
     ASSERT(((v * stride) & 0x3) == 0);
     
-    const uint32_t* data32 = (const uint32_t*) (data + v * stride);
+    const uint8_t* row = (data + v * stride);
     
-    // Divide the U coordinate by 16
-    uint16_t u16 = u >> 4;
+    // Divide the U coordinate by 4
+    uint16_t u4 = u >> 2;
     // Sample from the texture
-    uint32_t packed16 = data32[u16];
+    uint8_t packed4 = row[u4];
     // Shift the texel from the group of 4 into place
-    uint8_t unpacked = (uint8_t)(packed16 >> (2 * (u & 15)));
+    uint8_t unpacked = (uint8_t)(packed4 >> (2 * (u & 3)));
     // Mask off higher texels
     return unpacked & 3;
 }
