@@ -302,8 +302,27 @@ void update_time_display(struct tm *tick_time) {
 }
 
 void update_date_display(struct tm* tick_time) {
-    strftime(g_date_str, sizeof(g_date_str), "%A\n%x", tick_time);
+//    strftime(g_date_str, sizeof(g_date_str), "%A\n%x", tick_time);
+    strftime(g_date_str, sizeof(g_date_str), "%a %b %d", tick_time);
+    for (char* c = g_date_str; *c; ++c) {
+        if (*c >= 'a' && *c <= 'z') *c += 'A' - 'a';
+    }
+    
+    GRect layerSize = GRect(0, 0, c_viewportWidth, c_viewportHeight);
+
+    GSize dateSize = graphics_text_layout_get_content_size(
+        g_date_str,
+        g_font_info,
+        layerSize,
+        0,
+        GTextAlignmentLeft);
+    
+    layerSize.origin.x = c_viewportWidth - dateSize.w;
+    layerSize.origin.y = c_viewportHeight - dateSize.h;
+    layerSize.size = dateSize;
+    
     text_layer_set_text(dateLayer, g_date_str);
+    layer_set_frame((Layer*) dateLayer, layerSize);
 }
 
 uint32_t g_stat_timer = 1;
@@ -443,7 +462,7 @@ void handle_init(void) {
     
     // Time
     GSize timeSize = graphics_text_layout_get_content_size(
-        "0:APM",
+        "00:00 AM",
         g_font_time,
         layerSize,
         0,
@@ -457,7 +476,7 @@ void handle_init(void) {
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(timeLayer));
     
     // Date
-    dateLayer = text_layer_create(GRect(timeRect.origin.x + timeSize.w, timeRect.origin.y, c_viewportWidth - timeSize.w, timeSize.h));
+    dateLayer = text_layer_create(layerSize);
     text_layer_set_background_color(dateLayer, GColorClear);
     text_layer_set_text_color(dateLayer, GColorYellow);
     text_layer_set_font(dateLayer, g_font_info);
