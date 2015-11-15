@@ -53,6 +53,8 @@ static const int c_craft_info_count = sizeof(c_craft_info) / sizeof(struct craft
 #define MAX_MEMORY_SIZE 30000
 #define MAX_HULLS 47
 
+#define DT_EDGE_PAD 5
+
 static const int c_refreshTimer = 100;
 static const int c_viewportWidth = 144;
 static const int c_viewportHeight = 168;
@@ -317,7 +319,7 @@ void update_date_display(struct tm* tick_time) {
         0,
         GTextAlignmentLeft);
     
-    layerSize.origin.x = c_viewportWidth - dateSize.w;
+    layerSize.origin.x = c_viewportWidth - dateSize.w - DT_EDGE_PAD;
     layerSize.origin.y = c_viewportHeight - dateSize.h;
     layerSize.size = dateSize;
     
@@ -415,8 +417,8 @@ void handle_init(void) {
     layer_add_child(window_get_root_layer(my_window), bitmap_layer_get_layer(logoLayer));
 
     // Fonts    
-    g_font_sw = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_12));
-    g_font_sw_symbol = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_SYMBOL_12));
+    g_font_sw = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_14));
+    g_font_sw_symbol = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_SYMBOL_14));
     g_font_time = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
     g_font_info = fonts_get_system_font(FONT_KEY_GOTHIC_14);
     
@@ -467,7 +469,7 @@ void handle_init(void) {
         layerSize,
         0,
         GTextAlignmentLeft);
-    GRect timeRect = { GPoint(3, c_viewportHeight - timeSize.h), GSize(c_viewportWidth, timeSize.h) };
+    GRect timeRect = { GPoint(DT_EDGE_PAD, c_viewportHeight - timeSize.h), GSize(c_viewportWidth, timeSize.h) };
     timeLayer = text_layer_create(timeRect);
     text_layer_set_background_color(timeLayer, GColorClear);
     text_layer_set_text_color(timeLayer, GColorYellow);

@@ -86,7 +86,7 @@
             {
                 "characterRegex": "[a-z]",
                 "file": "fonts/SFDistantGalaxySymbols.ttf",
-                "name": "FONT_SYMBOL_12",
+                "name": "FONT_SYMBOL_14",
                 "targetPlatforms": [
                     "basalt",
                     "chalk"
@@ -96,7 +96,7 @@
             {
                 "characterRegex": "[a-zA-Z0-9\\-\\\\/,:\\.]",
                 "file": "fonts/SFDistantGalaxy.ttf",
-                "name": "FONT_12",
+                "name": "FONT_14",
                 "targetPlatforms": [
                     "basalt",
                     "chalk"
