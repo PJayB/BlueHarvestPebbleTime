@@ -6,8 +6,8 @@
 // TODO: remove me
 #include "scratch.h"
 
-#define PROFILE
-#define PROFILE_SHIP
+//#define PROFILE
+//#define PROFILE_SHIP
 //#define OVERDRAW_TEST
 //#define NO_HOLO_EFFECT
 
@@ -68,6 +68,7 @@ TextLayer* textLayer;
 TextLayer* textLayerSym;
 TextLayer* infoTextLayer;
 TextLayer* timeLayer;
+TextLayer* dateLayer;
 
 // Global resources
 GBitmap* frameBufferBitmap;
@@ -87,6 +88,7 @@ size_t g_current_stat = 0;
 size_t g_hologram_frame = 0;
 vec3_t* g_transformed_points[MAX_HULLS];
 char g_time_str[12];
+char g_date_str[32];
 int g_current_craft = 0;
 
 #ifdef PROFILE
@@ -299,6 +301,11 @@ void update_time_display(struct tm *tick_time) {
     text_layer_set_text(timeLayer, g_time_str);
 }
 
+void update_date_display(struct tm* tick_time) {
+    strftime(g_date_str, sizeof(g_date_str), "%A\n%x", tick_time);
+    text_layer_set_text(dateLayer, g_date_str);
+}
+
 uint32_t g_stat_timer = 1;
 void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 #ifndef PROFILE_SHIP
@@ -319,6 +326,9 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         load_holomesh(new_craft_index);
         update_title_and_info();
         update_time_display(tick_time);
+    }
+    if (units_changed & DAY_UNIT) {
+        update_date_display(tick_time);
     }
 #endif
 }
@@ -389,7 +399,7 @@ void handle_init(void) {
     g_font_sw = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_12));
     g_font_sw_symbol = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_SYMBOL_12));
     g_font_time = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
-    g_font_info = fonts_get_system_font(FONT_KEY_GOTHIC_09);
+    g_font_info = fonts_get_system_font(FONT_KEY_GOTHIC_14);
     
     // Paint layer
     frameBufferLayer = bitmap_layer_create(GRect(0, 0, c_viewportWidth, c_viewportHeight));
@@ -446,8 +456,18 @@ void handle_init(void) {
     //text_layer_set_text(timeLayer, "23:45 AM");
     layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(timeLayer));
     
+    // Date
+    dateLayer = text_layer_create(GRect(timeRect.origin.x + timeSize.w, timeRect.origin.y, c_viewportWidth - timeSize.w, timeSize.h));
+    text_layer_set_background_color(dateLayer, GColorClear);
+    text_layer_set_text_color(dateLayer, GColorYellow);
+    text_layer_set_font(dateLayer, g_font_info);
+    layer_add_child(window_get_root_layer(my_window), text_layer_get_layer(dateLayer));
+    
+
+
     time_t t = time(NULL);
     update_time_display(localtime(&t));
+    update_date_display(localtime(&t));
     update_title_and_info();
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "FINAL MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
@@ -479,6 +499,7 @@ void handle_deinit(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "  fonts cleaned up: %u bytes remaining", (unsigned) heap_bytes_used());
 
     text_layer_destroy(timeLayer);
+    text_layer_destroy(dateLayer);
     text_layer_destroy(textLayer);
     text_layer_destroy(textLayerSym);
     text_layer_destroy(infoTextLayer);
