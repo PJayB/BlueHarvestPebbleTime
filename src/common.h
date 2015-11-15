@@ -40,7 +40,7 @@
 
 #include "libfixmath/fix16.h"
 
-//#define ENABLE_DEPTH_TEST
+#define ENABLE_DEPTH_TEST
 
 #define fixp16_rcp(y) ((y) == 0 ? 0 : 65536 / (y))
 #define fixp16_mul(x, y) ((int32_t)(((int64_t)(x)*(int64_t)(y))>>16))
