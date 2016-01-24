@@ -55,6 +55,8 @@ static const int c_craft_info_count = sizeof(c_craft_info) / sizeof(struct craft
 
 #define DT_EDGE_PAD 5
 
+static const int c_accelSampleCount = 4;
+
 static const int c_refreshTimer = 100;
 static const int c_viewportWidth = 144;
 static const int c_viewportHeight = 168;
@@ -92,6 +94,7 @@ vec3_t* g_transformed_points[MAX_HULLS];
 char g_time_str[12];
 char g_date_str[32];
 int g_current_craft = 0;
+int g_angle_z = 0;
 
 #ifdef PROFILE
 static uint32_t max_time = 0;
@@ -210,10 +213,15 @@ void paint(void) {
 
     // Get the projection matrix_t
     static fix16_t angle = 0;
+    
+    fix16_t pitch = (g_angle_z * -14) - 2000;
+    if (pitch < -16000) pitch = -16000;
+    if (pitch >  12000) pitch =  12000;
 
     render_create_3d_transform(
         &g_last_transform, 
         &g_holomesh->transforms[holomesh_transform_perspective_pebble_aspect], 
+        pitch,
         angle);
 
     angle += fix16_one >> 6;
@@ -352,6 +360,15 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         update_date_display(tick_time);
     }
 #endif
+}
+
+void accel_data_handler(AccelData* data, uint32_t num_samples) {
+    int a = 0;
+    for (uint32_t i = 0; i < num_samples; ++i) {
+        a += data[i].z;
+    }
+    a /= c_accelSampleCount;
+    g_angle_z = a;
 }
 
 void create_symbol_text(char* out, size_t out_size, const char* in) {
@@ -497,6 +514,9 @@ void handle_init(void) {
     tick_timer_service_subscribe(SECOND_UNIT | MINUTE_UNIT, tick_handler);
     
     g_timer = app_timer_register(c_refreshTimer, animation_timer_trigger, NULL);
+    
+    accel_data_service_subscribe(c_accelSampleCount, accel_data_handler);
+    accel_service_set_sampling_rate(ACCEL_SAMPLING_10HZ);
 }
 
 void handle_deinit(void) {

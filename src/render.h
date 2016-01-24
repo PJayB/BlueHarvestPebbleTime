@@ -18,7 +18,7 @@ extern int8_t get_color_mod(uint8_t y);
 
 void render_init(void);
 void render_prep_frame(void);
-void render_create_3d_transform(matrix_t* out, const matrix_t* proj, fix16_t angle);
+void render_create_3d_transform(matrix_t* out, const matrix_t* proj, fix16_t angle_x, fix16_t angle_z);
 void render_transform_hulls(const holomesh_hull_t* hulls, size_t num_hulls, const viewport_t* viewport, const matrix_t* transform, render_transform_hulls_info_t* info);
 void render_draw_hull_wireframe(void* user_ptr, const holomesh_hull_t* hull, const vec3_t* transformed_vertices);
 void render_draw_mesh_wireframe(void* user_ptr, const holomesh_t* mesh, const vec3_t* const* transformed_points);

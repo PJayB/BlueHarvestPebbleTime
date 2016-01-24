@@ -22,13 +22,18 @@ void render_prep_frame(void) {
     scratch_clear();
 }
 
-void render_create_3d_transform(matrix_t* out, const matrix_t* proj, fix16_t angle) {
+void render_create_3d_transform(matrix_t* out, const matrix_t* proj, fix16_t angle_x, fix16_t angle_z) {
     // Rotate the transform
-    matrix_t rotation;
-    matrix_create_rotation_z(&rotation, angle);
+    matrix_t rotation_x;
+    matrix_t rotation_z;
+    matrix_t tmp;
+    
+    matrix_create_rotation_x(&rotation_x, angle_x);
+    matrix_create_rotation_z(&rotation_z, angle_z);
 
     // Create the final transform
-    matrix_multiply(out, &rotation, proj);
+    matrix_multiply(&tmp, &rotation_z, &rotation_x);
+    matrix_multiply(out, &tmp, proj);
 }
 
 void render_transform_point(vec3_t* out_p, const vec3_t* p, const matrix_t* transform, fix16_t viewport_half_width, fix16_t viewport_half_height) {

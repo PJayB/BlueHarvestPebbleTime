@@ -1,6 +1,38 @@
 #include "common.h"
 #include "matrix.h"
 
+void matrix_create_rotation_x(matrix_t* M, fix16_t angle) {
+#ifdef PEBBLE
+    fix16_t sa = sin_lookup(angle & 0xFFFF);
+    fix16_t ca = cos_lookup(angle & 0xFFFF);
+#else
+    // Approximate pebble behavior (angle [0,1] is interpreted as [0, 2pi])
+    fix16_t angle_r = fix16_mul(fix16_pi, fix16_mul(angle, 1 << 17));
+    fix16_t sa = fix16_sin(angle_r);
+    fix16_t ca = fix16_cos(angle_r);
+#endif
+
+    M->m[0][0] = fix16_one;
+    M->m[0][1] = 0;
+    M->m[0][2] = 0;
+    M->m[0][3] = 0;
+
+    M->m[1][0] = 0;
+    M->m[1][1] = ca;
+    M->m[1][2] = sa;
+    M->m[1][3] = 0;
+
+    M->m[2][0] = 0;
+    M->m[2][1] = -sa;
+    M->m[2][2] = ca;
+    M->m[2][3] = 0;
+
+    M->m[3][0] = 0;
+    M->m[3][1] = 0;
+    M->m[3][2] = 0;
+    M->m[3][3] = fix16_one;
+}
+
 void matrix_create_rotation_z(matrix_t* M, fix16_t angle) {
 #ifdef PEBBLE
     fix16_t sa = sin_lookup(angle & 0xFFFF);
