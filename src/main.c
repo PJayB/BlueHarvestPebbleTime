@@ -214,7 +214,7 @@ void paint(void) {
     // Get the projection matrix_t
     static fix16_t angle = 0;
     
-    fix16_t pitch = (g_angle_z * -14) - 2000;
+    fix16_t pitch = (g_angle_z * -14);
     if (pitch < -16000) pitch = -16000;
     if (pitch >  12000) pitch =  12000;
 
@@ -516,7 +516,7 @@ void handle_init(void) {
     g_timer = app_timer_register(c_refreshTimer, animation_timer_trigger, NULL);
     
     accel_data_service_subscribe(c_accelSampleCount, accel_data_handler);
-    accel_service_set_sampling_rate(ACCEL_SAMPLING_10HZ);
+    accel_service_set_sampling_rate(ACCEL_SAMPLING_25HZ);
 }
 
 void handle_deinit(void) {
