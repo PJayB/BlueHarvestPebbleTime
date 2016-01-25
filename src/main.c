@@ -225,9 +225,9 @@ void paint(void) {
         delta = -ACCEL_SMOOTH_CAP;
     g_angle_z_smoothed += delta;        
     
-    fix16_t pitch = (g_angle_z_smoothed * -14) - 2000;
-    if (pitch < -16000) pitch = -16000;
-    if (pitch >  12000) pitch =  12000;
+    fix16_t pitch = (g_angle_z_smoothed * -14) - 3000;
+    if (pitch < -17000) pitch = -17000;
+    if (pitch >  11000) pitch = 11000;
 
     render_create_3d_transform(
         &g_last_transform, 
