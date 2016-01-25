@@ -225,7 +225,7 @@ void paint(void) {
         delta = -ACCEL_SMOOTH_CAP;
     g_angle_z_smoothed += delta;        
     
-    fix16_t pitch = (g_angle_z_smoothed * -14);
+    fix16_t pitch = (g_angle_z_smoothed * -14) - 2000;
     if (pitch < -16000) pitch = -16000;
     if (pitch >  12000) pitch =  12000;
 

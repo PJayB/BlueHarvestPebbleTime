@@ -67,7 +67,7 @@ FORCE_INLINE uint8_t rasterizer_get_fragment_color(fix16_t base_u, fix16_t base_
 #endif
 
 FORCE_INLINE void rasterizer_draw_pixel(fix16_t base_u, fix16_t base_v, uint8_t ix, uint8_t iy, fix16_t iz, const texture_t* texture, rasterizer_context_t* ctx) {
-#ifdef FULL_COLOR
+#ifdef DEBUG_COLOR
     uint8_t p = 0b11000000 | (uint8_t) ((size_t) texture >> 2);
 #elif defined(PERSPECTIVE_CORRECT)
     uint8_t p = rasterizer_get_fragment_color(base_u, base_v, iz, texture, ctx->user_ptr);

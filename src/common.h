@@ -36,6 +36,7 @@
 #   define END_PROFILE(x) 
 #   define GET_PROFILE(x) 0
 #   define FULL_COLOR
+//#   define DEBUG_COLOR
 #   define FORCE_INLINE 
 #endif
 
