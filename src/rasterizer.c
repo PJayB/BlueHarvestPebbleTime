@@ -6,7 +6,7 @@
 #   pragma optimize("", off)
 #endif
 
-//#define PERSPECTIVE_CORRECT
+#define PERSPECTIVE_CORRECT
 //#define ACCURATE_PERSPECTIVE_CORRECT
 //#define DISABLE_LONG_SPAN_OPTIMIZATIONS
 

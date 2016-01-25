@@ -55,6 +55,8 @@ static const int c_craft_info_count = sizeof(c_craft_info) / sizeof(struct craft
 
 #define DT_EDGE_PAD 5
 
+#define ACCEL_SMOOTH_CAP 200
+
 static const int c_accelSampleCount = 4;
 
 static const int c_refreshTimer = 100;
@@ -95,6 +97,8 @@ char g_time_str[12];
 char g_date_str[32];
 int g_current_craft = 0;
 int g_angle_z = 0;
+int g_angle_z_smoothed = 0;
+
 
 #ifdef PROFILE
 static uint32_t max_time = 0;
@@ -214,7 +218,14 @@ void paint(void) {
     // Get the projection matrix_t
     static fix16_t angle = 0;
     
-    fix16_t pitch = (g_angle_z * -14);
+    int delta = g_angle_z - g_angle_z_smoothed;
+    if (delta > ACCEL_SMOOTH_CAP)
+        delta = ACCEL_SMOOTH_CAP;
+    else if (delta < -ACCEL_SMOOTH_CAP)
+        delta = -ACCEL_SMOOTH_CAP;
+    g_angle_z_smoothed += delta;        
+    
+    fix16_t pitch = (g_angle_z_smoothed * -14);
     if (pitch < -16000) pitch = -16000;
     if (pitch >  12000) pitch =  12000;
 
@@ -418,6 +429,7 @@ void handle_init(void) {
     
     // TODO: restore this once done profiling
 #ifndef PROFILE_SHIP
+    srand(time(NULL));
     load_holomesh(rand() % c_craft_info_count);
 #else
     load_holomesh(2);
