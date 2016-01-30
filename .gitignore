@@ -2,4 +2,4 @@ build/
 .lock*
 *~
 *.kate-swp
-
+*.tmp
