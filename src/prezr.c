@@ -1,4 +1,4 @@
-﻿#include <pebble.h>
+#include <pebble.h>
 #include "prezr.h"
 
 typedef struct prezr_pack_header_s {
