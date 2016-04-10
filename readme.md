@@ -18,9 +18,9 @@ Featured Craft
 * MODIFIED YT-1300 LT FREIGHTER "MILLENNIUM FALCON"
 * CORELLIAN CORVETTE (aka. BLOCKADE RUNNER)
 * IMPERIAL II-CLASS STAR DESTROYER
-* EF76 NEBULON-B ESCORT FRIGATE
+* EF76 NEBULON-B ESCORT FRIGATE (Coming Soon)
 * LAMBDA-CLASS T-4A
-* SLAVE I
+* SLAVE I (Coming Soon)
 * SUPER-STAR DESTROYER "EXECUTOR"
 * TIE/X1 ADVANCED STARFIGHTER
 * TIE/SA BOMBER STARFIGHTER
@@ -31,9 +31,10 @@ Featured Craft
 
 Outstanding Work
 ----------------------
-* Polish: animations & transitions
-* Polish: title cross-fade from Star Wars font to English
-* Polish: wireframe mode and varying perspectives
+* Feature: settings page with ship/affiliation selection
+* Feature: animations & transitions
+* Feature: title cross-fade from Star Wars font to English
+* Feature: wireframe mode and varying perspectives
 * Bug: SLAVE I renders incorrectly (corrupt asset?)
 * Bug: Fix a crash when rendering the Nebulon-B Frigate.
 * Bug: battery life is extremely poor.
