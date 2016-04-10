@@ -7,8 +7,7 @@
 #include "scratch.h"
 
 //#define PROFILE
-#define LOCK_SHIP 13
-//#define PROFILE_SHIP
+//#define LOCK_SHIP 13
 //#define OVERDRAW_TEST
 //#define NO_HOLO_EFFECT
 
@@ -349,7 +348,6 @@ void update_date_display(struct tm* tick_time) {
 
 uint32_t g_stat_timer = 1;
 void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
-#ifndef PROFILE_SHIP
     if (units_changed & SECOND_UNIT) {
         g_stat_timer++;
 
@@ -359,6 +357,7 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         }
     }
     if (units_changed & MINUTE_UNIT) {
+#ifndef LOCK_SHIP
         int new_craft_index = rand() % (c_craft_info_count - 1);
         if (new_craft_index >= g_current_craft) {
             new_craft_index++;
@@ -366,12 +365,13 @@ void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
         
         load_holomesh(new_craft_index);
         update_title_and_info();
+#endif
+
         update_time_display(tick_time);
     }
     if (units_changed & DAY_UNIT) {
         update_date_display(tick_time);
     }
-#endif
 }
 
 void accel_data_handler(AccelData* data, uint32_t num_samples) {
