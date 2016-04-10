@@ -4,85 +4,11 @@
         ""
     ],
     "companyName": "pebble@pjblewis.com",
+    "enableMultiJS": true,
     "longName": "STAR WARS",
     "projectType": "native",
     "resources": {
         "media": [
-            {
-                "file": "data/awing.holo",
-                "name": "HOLO_AWING",
-                "type": "raw"
-            },
-            {
-                "file": "data/bwing.holo",
-                "name": "HOLO_BWING",
-                "type": "raw"
-            },
-            {
-                "file": "data/cortn.holo",
-                "name": "HOLO_CORTN",
-                "type": "raw"
-            },
-            {
-                "file": "data/corv.holo",
-                "name": "HOLO_CORV",
-                "type": "raw"
-            },
-            {
-                "file": "data/isd.holo",
-                "name": "HOLO_ISD",
-                "type": "raw"
-            },
-            {
-                "file": "data/neb.holo",
-                "name": "HOLO_NEB",
-                "type": "raw"
-            },
-            {
-                "file": "data/shuttle.holo",
-                "name": "HOLO_SHUTTLE",
-                "type": "raw"
-            },
-            {
-                "file": "data/slaveone.holo",
-                "name": "HOLO_SLAVEONE",
-                "type": "raw"
-            },
-            {
-                "file": "data/ssd.holo",
-                "name": "HOLO_SSD",
-                "type": "raw"
-            },
-            {
-                "file": "data/tieadv.holo",
-                "name": "HOLO_TIEADV",
-                "type": "raw"
-            },
-            {
-                "file": "data/tiebmb.holo",
-                "name": "HOLO_TIEBMB",
-                "type": "raw"
-            },
-            {
-                "file": "data/tieftr.holo",
-                "name": "HOLO_TIEFTR",
-                "type": "raw"
-            },
-            {
-                "file": "data/tieint.holo",
-                "name": "HOLO_TIEINT",
-                "type": "raw"
-            },
-            {
-                "file": "data/xwing.holo",
-                "name": "HOLO_XWING",
-                "type": "raw"
-            },
-            {
-                "file": "data/ywing.holo",
-                "name": "HOLO_YWING",
-                "type": "raw"
-            },
             {
                 "characterRegex": "[a-z]",
                 "file": "fonts/SFDistantGalaxySymbols.ttf",
@@ -104,12 +30,48 @@
                 "type": "font"
             },
             {
-                "file": "data/prezr.impbg.blob",
-                "name": "PREZR_IMPBG_PACK",
-                "targetPlatforms": [
-                    "basalt",
-                    "chalk"
-                ],
+                "file": "data/ywing.holo",
+                "name": "HOLO_YWING",
+                "type": "raw"
+            },
+            {
+                "file": "data/xwing.holo",
+                "name": "HOLO_XWING",
+                "type": "raw"
+            },
+            {
+                "file": "data/tieint.holo",
+                "name": "HOLO_TIEINT",
+                "type": "raw"
+            },
+            {
+                "file": "data/tieftr.holo",
+                "name": "HOLO_TIEFTR",
+                "type": "raw"
+            },
+            {
+                "file": "data/tiebmb.holo",
+                "name": "HOLO_TIEBMB",
+                "type": "raw"
+            },
+            {
+                "file": "data/tieadv.holo",
+                "name": "HOLO_TIEADV",
+                "type": "raw"
+            },
+            {
+                "file": "data/ssd.holo",
+                "name": "HOLO_SSD",
+                "type": "raw"
+            },
+            {
+                "file": "data/slaveone.holo",
+                "name": "HOLO_SLAVEONE",
+                "type": "raw"
+            },
+            {
+                "file": "data/shuttle.holo",
+                "name": "HOLO_SHUTTLE",
                 "type": "raw"
             },
             {
@@ -129,6 +91,45 @@
                     "chalk"
                 ],
                 "type": "raw"
+            },
+            {
+                "file": "data/prezr.impbg.blob",
+                "name": "PREZR_IMPBG_PACK",
+                "targetPlatforms": [
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "raw"
+            },
+            {
+                "file": "data/neb.holo",
+                "name": "HOLO_NEB",
+                "type": "raw"
+            },
+            {
+                "file": "data/isd.holo",
+                "name": "HOLO_ISD",
+                "type": "raw"
+            },
+            {
+                "file": "data/corv.holo",
+                "name": "HOLO_CORV",
+                "type": "raw"
+            },
+            {
+                "file": "data/cortn.holo",
+                "name": "HOLO_CORTN",
+                "type": "raw"
+            },
+            {
+                "file": "data/bwing.holo",
+                "name": "HOLO_BWING",
+                "type": "raw"
+            },
+            {
+                "file": "data/awing.holo",
+                "name": "HOLO_AWING",
+                "type": "raw"
             }
         ]
     },
@@ -140,6 +141,6 @@
     "uuid": "1b5a56a0-9cc1-4f93-83f3-5116ffb3ba22",
     "versionLabel": "1.0",
     "watchapp": {
-        "watchface": false
+        "watchface": true
     }
 }
