@@ -28,9 +28,9 @@ static const struct craft_info_s {
     { RESOURCE_ID_HOLO_CORTN },   //  2
     { RESOURCE_ID_HOLO_CORV },    //  3 
     { RESOURCE_ID_HOLO_ISD },     //  4
-    { RESOURCE_ID_HOLO_NEB },     //  5
+//    { RESOURCE_ID_HOLO_NEB },     //  5
     { RESOURCE_ID_HOLO_SHUTTLE }, //  6
-    { RESOURCE_ID_HOLO_SLAVEONE },//  7
+//    { RESOURCE_ID_HOLO_SLAVEONE },//  7
     { RESOURCE_ID_HOLO_SSD },     //  8
     { RESOURCE_ID_HOLO_TIEADV },  //  9
     { RESOURCE_ID_HOLO_TIEBMB },  // 10
