@@ -7,6 +7,7 @@
 #include "scratch.h"
 
 //#define PROFILE
+#define LOCK_SHIP 13
 //#define PROFILE_SHIP
 //#define OVERDRAW_TEST
 //#define NO_HOLO_EFFECT
@@ -23,21 +24,21 @@ static GColor c_palette[] = {
 static const struct craft_info_s {
     int resource_id;
 } c_craft_info[] = {
-    { RESOURCE_ID_HOLO_AWING },
-    { RESOURCE_ID_HOLO_BWING },
-    { RESOURCE_ID_HOLO_CORTN },
-    { RESOURCE_ID_HOLO_CORV },
-    { RESOURCE_ID_HOLO_ISD },
-    { RESOURCE_ID_HOLO_NEB },
-    { RESOURCE_ID_HOLO_SHUTTLE },
-    { RESOURCE_ID_HOLO_SLAVEONE },
-    { RESOURCE_ID_HOLO_SSD },
-    { RESOURCE_ID_HOLO_TIEADV },
-    { RESOURCE_ID_HOLO_TIEBMB },
-    { RESOURCE_ID_HOLO_TIEFTR },
-    { RESOURCE_ID_HOLO_TIEINT },
-    { RESOURCE_ID_HOLO_XWING },
-    { RESOURCE_ID_HOLO_YWING }
+    { RESOURCE_ID_HOLO_AWING },   //  0
+    { RESOURCE_ID_HOLO_BWING },   //  1
+    { RESOURCE_ID_HOLO_CORTN },   //  2
+    { RESOURCE_ID_HOLO_CORV },    //  3 
+    { RESOURCE_ID_HOLO_ISD },     //  4
+    { RESOURCE_ID_HOLO_NEB },     //  5
+    { RESOURCE_ID_HOLO_SHUTTLE }, //  6
+    { RESOURCE_ID_HOLO_SLAVEONE },//  7
+    { RESOURCE_ID_HOLO_SSD },     //  8
+    { RESOURCE_ID_HOLO_TIEADV },  //  9
+    { RESOURCE_ID_HOLO_TIEBMB },  // 10
+    { RESOURCE_ID_HOLO_TIEFTR },  // 11
+    { RESOURCE_ID_HOLO_TIEINT },  // 12
+    { RESOURCE_ID_HOLO_XWING },   // 13
+    { RESOURCE_ID_HOLO_YWING }    // 14
 };
 
 static const int c_affiliation_logos[] = {
@@ -428,11 +429,11 @@ void handle_init(void) {
     APP_LOG(APP_LOG_LEVEL_DEBUG, "INIT MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
     
     // TODO: restore this once done profiling
-#ifndef PROFILE_SHIP
+#ifndef LOCK_SHIP
     srand(time(NULL));
     load_holomesh(rand() % c_craft_info_count);
 #else
-    load_holomesh(2);
+    load_holomesh(LOCK_SHIP);
 #endif
     
     APP_LOG(APP_LOG_LEVEL_DEBUG, "UI MEMORY: %u bytes used, %u bytes free", (unsigned) heap_bytes_used(), (unsigned) heap_bytes_free());
