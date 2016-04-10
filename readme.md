@@ -31,8 +31,12 @@ Featured Craft
 
 Outstanding Work
 ----------------------
-* Fix a crash when rendering the Nebulon-B Frigate.
-* Optimize: battery life is extremely poor.
-* Fix fill convention (there are occasionally some overlaps.)
+* Polish: animations & transitions
+* Polish: title cross-fade from Star Wars font to English
+* Polish: wireframe mode and varying perspectives
+* Bug: SLAVE I renders incorrectly (corrupt asset?)
+* Bug: Fix a crash when rendering the Nebulon-B Frigate.
+* Bug: battery life is extremely poor.
+* Bug: Fix fill convention (there are occasionally some overlaps.)
 
 > Written with [StackEdit](https://stackedit.io/).
