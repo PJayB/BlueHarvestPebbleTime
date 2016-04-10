@@ -613,6 +613,8 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_spans_for_triangle(ra
     if (ey1_dy != 0)
     {
         rasterizer_stepping_span_t* span = rasterizer_allocate_stepping_span();
+        if (!span) return span_list;
+
         span->e0 = e0; // copy e0
         
         rasterizer_stepping_edge_y_t ey1;
@@ -633,6 +635,8 @@ FORCE_INLINE rasterizer_stepping_span_t* rasterizer_create_spans_for_triangle(ra
     if (ey2_dy != 0)
     {
         rasterizer_stepping_span_t* span = rasterizer_allocate_stepping_span();
+        if (!span) return span_list;
+
         span->e0 = e0; // copy e0
         
         rasterizer_stepping_edge_y_t ey1;
